@@ -27,6 +27,10 @@ test:
 test-v:
 	@gotestsum --format standard-verbose -- -v ./... && $(call success,"All tests passed")
 
+# Run tests and watch them
+test-w:
+	@gotestsum --watch --format standard-verbose -- -v ./... && $(call success,"All tests passed")
+
 # Clean build artifacts
 clean:
 	@echo "Cleaning..."

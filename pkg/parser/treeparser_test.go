@@ -34,7 +34,6 @@ func (s *ParserTestSuite) SetupTest() {
 	var err error
 	s.tempDir, err = os.MkdirTemp("", "parser_test_*")
 	s.Require().NoError(err)
-
 	s.Require().NoError(os.Chdir(s.tempDir))
 
 	s.logger = &mockLogger{}
@@ -44,7 +43,7 @@ func (s *ParserTestSuite) SetupTest() {
 	s.parser = New(testCtx)
 }
 
-func (s *ParserTestSuite) TearDownTest() {
+func (s *ParserTestSuite) TearDownTestSuite() {
 	os.RemoveAll(s.tempDir)
 }
 
@@ -119,6 +118,46 @@ func (s *ParserTestSuite) TestComplexStructure() {
 	})
 }
 
+func (s *ParserTestSuite) TestDotRoot() {
+	input := `.
+├── poopy
+│   └── bar
+│       ├── baz
+│       │   └── boop.txt
+│       └── foop.js
+└── test
+    ├── foo
+    │   └── bar.jpg
+    └── test.txt`
+
+	expectedFiles := []string{
+		"poopy/bar/baz/boop.txt",
+		"poopy/bar/foop.js",
+		"test/foo/bar.jpg",
+		"test/test.txt",
+	}
+	expectedDirs := []string{
+		"poopy",
+		"poopy/bar",
+		"poopy/bar/baz",
+		"test",
+		"test/foo",
+	}
+
+	s.Run("create structure with dot root", func() {
+		s.Require().NoError(s.parser.ParseTreeString(input))
+		s.verifyStructure(expectedFiles, expectedDirs)
+
+		// Additional checks for correct nesting
+		s.FileExists(filepath.Join(s.tempDir, "poopy/bar/baz/boop.txt"))
+		s.FileExists(filepath.Join(s.tempDir, "test/foo/bar.jpg"))
+
+		// Verify directory existence explicitly
+		s.DirExists(filepath.Join(s.tempDir, "poopy/bar/baz"))
+		s.DirExists(filepath.Join(s.tempDir, "test/foo"))
+	})
+}
+
 func (s *ParserTestSuite) TestRealWorldExample() {
 	input := `poop
 ├── poopy
@@ -141,6 +180,83 @@ func (s *ParserTestSuite) TestRealWorldExample() {
 	s.Run("create real world structure", func() {
 		s.Require().NoError(s.parser.ParseTreeString(input))
 		s.verifyStructure(expectedFiles, expectedDirs)
+	})
+}
+
+func (s *ParserTestSuite) TestDeepNesting() {
+	input := `root
+├── level1
+│   ├── level2
+│   │   ├── level3
+│   │   │   └── deep.txt
+│   │   └── file2.txt
+│   └── file1.txt
+└── sibling
+    └── nephew.txt`
+
+	expectedFiles := []string{
+		"root/level1/level2/level3/deep.txt",
+		"root/level1/level2/file2.txt",
+		"root/level1/file1.txt",
+		"root/sibling/nephew.txt",
+	}
+	expectedDirs := []string{
+		"root",
+		"root/level1",
+		"root/level1/level2",
+		"root/level1/level2/level3",
+		"root/sibling",
+	}
+
+	s.Run("create deeply nested structure", func() {
+		s.Require().NoError(s.parser.ParseTreeString(input))
+		s.verifyStructure(expectedFiles, expectedDirs)
+
+		// Verify specific deep nesting
+		deepFile := filepath.Join(s.tempDir, "root/level1/level2/level3/deep.txt")
+		s.FileExists(deepFile)
+
+		// Verify all intermediate directories exist
+		s.DirExists(filepath.Join(s.tempDir, "root/level1/level2/level3"))
+	})
+}
+
+func (s *ParserTestSuite) TestMultipleSiblings() {
+	input := `project
+├── src
+│   ├── file1.txt
+│   ├── file2.txt
+│   └── file3.txt
+└── test
+    ├── test1.txt
+    ├── test2.txt
+    └── test3.txt`
+
+	expectedFiles := []string{
+		"project/src/file1.txt",
+		"project/src/file2.txt",
+		"project/src/file3.txt",
+		"project/test/test1.txt",
+		"project/test/test2.txt",
+		"project/test/test3.txt",
+	}
+	expectedDirs := []string{
+		"project",
+		"project/src",
+		"project/test",
+	}
+
+	s.Run("create structure with multiple siblings", func() {
+		s.Require().NoError(s.parser.ParseTreeString(input))
+		s.verifyStructure(expectedFiles, expectedDirs)
+
+		// Verify sibling files are in correct directories
+		for _, file := range []string{"file1.txt", "file2.txt", "file3.txt"} {
+			s.FileExists(filepath.Join(s.tempDir, "project/src", file))
+		}
+		for _, file := range []string{"test1.txt", "test2.txt", "test3.txt"} {
+			s.FileExists(filepath.Join(s.tempDir, "project/test", file))
+		}
 	})
 }
 
