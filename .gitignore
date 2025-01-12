@@ -21,6 +21,7 @@ Thumbs.db
 # Ignore build directories
 dist/
 build/
+bin/
 
 # Ignore environment files
 .env

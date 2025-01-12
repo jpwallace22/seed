@@ -6,18 +6,27 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jpwallace22/seed/pkg/logger"
+	"github.com/jpwallace22/seed/pkg/ctx"
 )
 
-// represents a single node in the directory tree
+type Parser struct {
+	ctx ctx.SeedContext
+}
+
 type TreeNode struct {
 	name     string
 	children []*TreeNode
 	isFile   bool
 }
 
+func New(ctx ctx.SeedContext) *Parser {
+	return &Parser{
+		ctx: ctx,
+	}
+}
+
 // converts a text representation of a directory tree into actual directories and files
-func ParseTreeString(tree string) error {
+func (p *Parser) ParseTreeString(tree string) error {
 	lines := strings.Split(strings.TrimSpace(tree), "\n")
 	if len(lines) == 0 {
 		return fmt.Errorf("no tree provided")
@@ -27,12 +36,12 @@ func ParseTreeString(tree string) error {
 		lines = lines[1:]
 	}
 
-	root, err := buildTree(lines)
+	root, err := p.buildTree(lines)
 	if err != nil {
 		return fmt.Errorf("failed to parse tree: %w", err)
 	}
 
-	if err := createFileSystem(root, ""); err != nil {
+	if err := p.createFileSystem(root, ""); err != nil {
 		return err
 	}
 
@@ -40,7 +49,7 @@ func ParseTreeString(tree string) error {
 }
 
 // converts the string lines into a tree structure
-func buildTree(lines []string) (*TreeNode, error) {
+func (p *Parser) buildTree(lines []string) (*TreeNode, error) {
 	if len(lines) == 0 {
 		return nil, fmt.Errorf("no lines to parse")
 	}
@@ -56,7 +65,8 @@ func buildTree(lines []string) (*TreeNode, error) {
 		children: make([]*TreeNode, 0),
 	}
 
-	currentLevel := []*TreeNode{root}
+	// Stack to keep track of the current path in the tree
+	stack := []*TreeNode{root}
 	previousDepth := 0
 
 	for i := 1; i < len(lines); i++ {
@@ -65,8 +75,8 @@ func buildTree(lines []string) (*TreeNode, error) {
 			continue
 		}
 
-		depth := getDepth(lines[i])
-		name := extractName(lines[i])
+		depth := p.getDepth(lines[i])
+		name := p.extractName(lines[i])
 		if name == "" {
 			continue
 		}
@@ -77,18 +87,30 @@ func buildTree(lines []string) (*TreeNode, error) {
 			children: make([]*TreeNode, 0),
 		}
 
+		// Adjust stack based on depth
 		if depth > previousDepth {
-			currentLevel = append(currentLevel, currentLevel[len(currentLevel)-1])
+			// Going deeper - keep current path
 		} else if depth < previousDepth {
-			currentLevel = currentLevel[:depth+1]
+			// Going back up - pop from stack until we're at the right level
+			stack = stack[:depth+1]
+		} else if depth == previousDepth && len(stack) > depth+1 {
+			// Same level - ensure stack has correct length
+			stack = stack[:depth+1]
 		}
 
-		parent := currentLevel[len(currentLevel)-1]
+		// Add node to its parent
+		parent := stack[depth]
 		parent.children = append(parent.children, node)
 
+		// If this is a directory, add it to the stack for potential children
 		if !node.isFile {
-			currentLevel[len(currentLevel)-1] = node
+			if depth+1 < len(stack) {
+				stack[depth+1] = node
+			} else {
+				stack = append(stack, node)
+			}
 		}
+
 		previousDepth = depth
 	}
 
@@ -96,7 +118,7 @@ func buildTree(lines []string) (*TreeNode, error) {
 }
 
 // calculates the depth of a line based on tree characters
-func getDepth(line string) int {
+func (p *Parser) getDepth(line string) int {
 	depth := 0
 	for i := 0; i < len(line); {
 		if strings.HasPrefix(line[i:], "│   ") || strings.HasPrefix(line[i:], "    ") {
@@ -111,7 +133,7 @@ func getDepth(line string) int {
 }
 
 // gets the actual name from a tree line by removing tree characters
-func extractName(line string) string {
+func (p *Parser) extractName(line string) string {
 	line = strings.TrimSpace(line)
 	treeChars := []string{
 		"├── ", "└── ",
@@ -127,10 +149,11 @@ func extractName(line string) string {
 }
 
 // recursivly creates the actual directory structure from the parsed tree
-func createFileSystem(node *TreeNode, parentPath string) error {
+func (p *Parser) createFileSystem(node *TreeNode, parentPath string) error {
 	if node == nil {
 		return nil
 	}
+	logger := p.ctx.Logger
 	permissions := os.FileMode(0755)
 
 	// handle root node specially
@@ -166,7 +189,7 @@ func createFileSystem(node *TreeNode, parentPath string) error {
 
 	// loop it
 	for _, child := range node.children {
-		if err := createFileSystem(child, currentPath); err != nil {
+		if err := p.createFileSystem(child, currentPath); err != nil {
 			return err
 		}
 	}
