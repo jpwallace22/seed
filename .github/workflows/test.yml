@@ -1,0 +1,52 @@
+name: Cross-Platform Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        go-version: [1.21.x]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+
+      - name: Install Make (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install make
+          make --version
+
+      - name: Install dependencies
+        run: make install-deps
+
+      - name: Run tests
+        run: make test
+        shell: bash # Explicitly use bash for make commands
+
+      - name: Build
+        run: make build
+        shell: bash
+
+      - name: Smoke test
+        shell: bash
+        run: |
+          # Use the correct binary path based on the operating system
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            ./bin/seed.exe --version
+          else
+            ./bin/seed --version
+          fi

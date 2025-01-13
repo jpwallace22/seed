@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"fmt"
@@ -34,11 +34,12 @@ func init() {
 }
 
 var rootCmd = &cobra.Command{
-	Use:   "seed [path/to/tree]",
-	Short: "Plant the seeds of your directory tree 🌱.",
-	Long:  "Seed is a CLI tool that helps you grow directory structures from a tree representation provided via file or clipboard.",
-	Args:  cobra.MaximumNArgs(1),
-	RunE:  runCommand,
+	Version: "0.1.0",
+	Use:     "seed [path/to/tree]",
+	Short:   "Plant the seeds of your directory tree 🌱.",
+	Long:    "Seed is a CLI tool that helps you grow directory structures from a tree representation provided via file or clipboard.",
+	Args:    cobra.MaximumNArgs(1),
+	RunE:    runCommand,
 }
 
 func runCommand(cmd *cobra.Command, args []string) error {
