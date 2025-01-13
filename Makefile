@@ -1,17 +1,24 @@
 # Colors for pretty output
+.PHONY: build test test-v clean fmt lint help build-all install
+
 GREEN  := $(shell tput -Txterm setaf 2)
 RESET  := $(shell tput -Txterm sgr0)
 BOLD   := $(shell tput -Txterm bold)
 
-.PHONY: build test test-v clean fmt lint help build-all install
+define success
+	echo "${GREEN}${BOLD}✓ $1${RESET}"
+endef
 
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "development")
 
-# Binary name
+# Binary Info
 BINARY_NAME = seed
-
-# Output directory for binaries
 BINARY_DIR = bin
+ifeq ($(OS),Windows_NT)
+    BINARY_EXTENSION = .exe
+else
+    BINARY_EXTENSION =
+endif
 
 # Main package path reflecting the new structure
 MAIN_PATH = cmd/seed
@@ -20,18 +27,15 @@ MAIN_PATH = cmd/seed
 LDFLAGS = -ldflags "-X main.version=$(VERSION)"
 
 # Default target when just running 'make'
-all: build
+all: install-deps
 
 # Success message function
-define success
-	echo "${GREEN}${BOLD}✓ $1${RESET}"
-endef
 
 # Build the binary
 build:
 	@echo "Building $(BINARY_NAME) version $(VERSION)..."
 	@mkdir -p $(BINARY_DIR)
-	go build $(LDFLAGS) -o $(BINARY_DIR)/$(BINARY_NAME) ./$(MAIN_PATH)
+	go build $(LDFLAGS) -o $(BINARY_DIR)/$(BINARY_NAME)$(BINARY_EXTENSION) ./$(MAIN_PATH)
 	@$(call success,"Built")
 
 
