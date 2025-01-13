@@ -73,7 +73,9 @@ func (p *Parser) buildTree(lines []string) (*TreeNode, error) {
 	lastNodes[0] = root
 
 	for i := 1; i < len(lines); i++ {
-		line := p.normalizeLine(lines[i])
+		// Need to normalize the line by changing all spaces with ASCII
+		line := strings.ReplaceAll(lines[i], "\u00a0", " ")
+
 		if strings.TrimSpace(line) == "" {
 			continue
 		}
@@ -186,14 +188,4 @@ func (p *Parser) createFileSystem(node *TreeNode, parentPath string) error {
 	}
 
 	return nil
-}
-
-// Need to use ASCII whitespace
-func (p *Parser) normalizeLine(line string) string {
-	return strings.Map(func(r rune) rune {
-		if r == '\u00a0' || r == ' ' { // Treat both as standard space
-			return ' '
-		}
-		return r
-	}, line)
 }

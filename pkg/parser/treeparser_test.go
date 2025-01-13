@@ -285,6 +285,83 @@ func (s *ParserTestSuite) verifyStructure(expectedFiles, expectedDirs []string) 
 	s.ElementsMatch(expectedDirs, actualDirs, "Directories created don't match expected")
 }
 
+func (s *ParserTestSuite) TestGetDepth() {
+	tests := []struct {
+		name     string
+		input    string
+		expected int
+	}{
+		{
+			name:     "Depth with tree characters and single indentation",
+			input:    "│   └── file.txt",
+			expected: 2,
+		},
+		{
+			name:     "Depth with spaces only and single indentation",
+			input:    "    └── file.txt",
+			expected: 2,
+		},
+		{
+			name:     "Depth with root tree character",
+			input:    "├── dir",
+			expected: 1,
+		},
+		{
+			name:     "Depth with deeply indented line",
+			input:    "        └── file.txt",
+			expected: 3,
+		},
+		{
+			name:     "Depth with no indentation",
+			input:    "file.txt",
+			expected: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			result := s.parser.getDepth(tt.input)
+			s.Equal(tt.expected, result, "getDepth(%q) = %d, want %d", tt.input, result, tt.expected)
+		})
+	}
+}
+
+func (s *ParserTestSuite) TestExtractName() {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "Extract file name from tree line",
+			input:    "├── file.txt",
+			expected: "file.txt",
+		},
+		{
+			name:     "Extract file name with nested structure",
+			input:    "│   └── file.txt",
+			expected: "file.txt",
+		},
+		{
+			name:     "Extract directory name from tree line",
+			input:    "└── dir",
+			expected: "dir",
+		},
+		{
+			name:     "Extract plain file name without tree characters",
+			input:    "file.txt",
+			expected: "file.txt",
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			result := s.parser.extractName(tt.input)
+			s.Equal(tt.expected, result, "extractName(%q) = %q, want %q", tt.input, result, tt.expected)
+		})
+	}
+}
+
 func TestParserSuite(t *testing.T) {
 	suite.Run(t, new(ParserTestSuite))
 }
