@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jpwallace22/seed/pkg/ctx"
+	"github.com/jpwallace22/seed/internal/ctx"
 	"github.com/jpwallace22/seed/pkg/logger"
 	"github.com/stretchr/testify/suite"
 )

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jpwallace22/seed/pkg/ctx"
+	"github.com/jpwallace22/seed/internal/ctx"
 )
 
 type Parser struct {

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jpwallace22/seed/pkg/ctx"
-	"github.com/jpwallace22/seed/pkg/parser"
+	"github.com/jpwallace22/seed/internal/ctx"
+	"github.com/jpwallace22/seed/internal/parser"
 	"github.com/spf13/cobra"
 	clipboard "github.com/tiagomelo/go-clipboard/clipboard"
 )
