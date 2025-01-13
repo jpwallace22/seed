@@ -260,31 +260,6 @@ func (s *ParserTestSuite) TestMultipleSiblings() {
 	})
 }
 
-func (s *ParserTestSuite) verifyStructure(expectedFiles, expectedDirs []string) {
-	var actualFiles, actualDirs []string
-
-	err := filepath.Walk(s.tempDir, func(path string, info os.FileInfo, err error) error {
-		s.Require().NoError(err)
-		if path == s.tempDir {
-			return nil
-		}
-
-		relPath, err := filepath.Rel(s.tempDir, path)
-		s.Require().NoError(err)
-
-		if info.IsDir() {
-			actualDirs = append(actualDirs, relPath)
-		} else {
-			actualFiles = append(actualFiles, relPath)
-		}
-		return nil
-	})
-	s.Require().NoError(err)
-
-	s.ElementsMatch(expectedFiles, actualFiles, "Files created don't match expected")
-	s.ElementsMatch(expectedDirs, actualDirs, "Directories created don't match expected")
-}
-
 func (s *ParserTestSuite) TestGetDepth() {
 	tests := []struct {
 		name     string
@@ -360,6 +335,34 @@ func (s *ParserTestSuite) TestExtractName() {
 			s.Equal(tt.expected, result, "extractName(%q) = %q, want %q", tt.input, result, tt.expected)
 		})
 	}
+}
+
+func (s *ParserTestSuite) verifyStructure(expectedFiles, expectedDirs []string) {
+	var actualFiles, actualDirs []string
+
+	err := filepath.Walk(s.tempDir, func(path string, info os.FileInfo, err error) error {
+		s.Require().NoError(err)
+		if path == s.tempDir {
+			return nil
+		}
+
+		relPath, err := filepath.Rel(s.tempDir, path)
+		s.Require().NoError(err)
+
+		// Normalize path for windows support
+		relPath = filepath.ToSlash(relPath)
+
+		if info.IsDir() {
+			actualDirs = append(actualDirs, relPath)
+		} else {
+			actualFiles = append(actualFiles, relPath)
+		}
+		return nil
+	})
+	s.Require().NoError(err)
+
+	s.ElementsMatch(expectedFiles, actualFiles, "Files created don't match expected")
+	s.ElementsMatch(expectedDirs, actualDirs, "Directories created don't match expected")
 }
 
 func TestParserSuite(t *testing.T) {
