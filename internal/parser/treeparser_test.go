@@ -87,6 +87,21 @@ func (s *ParserTestSuite) TestSimpleStructure() {
 	})
 }
 
+func (s *ParserTestSuite) TestStripsTrailingSlashes() {
+	input := `root
+├── dir1\
+└── dir2/
+    └── file.txt`
+
+	expectedFiles := []string{"root/dir2/file.txt"}
+	expectedDirs := []string{"root", "root/dir1", "root/dir2"}
+
+	s.Run("create directory structure", func() {
+		s.Require().NoError(s.parser.ParseTreeString(input))
+		s.verifyStructure(expectedFiles, expectedDirs)
+	})
+}
+
 func (s *ParserTestSuite) TestComplexStructure() {
 	input := `project
 ├── src

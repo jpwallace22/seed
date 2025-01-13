@@ -132,12 +132,12 @@ func (p *Parser) getDepth(line string) int {
 
 func (p *Parser) extractName(line string) string {
 	line = strings.TrimSpace(line)
-	treeChars := []string{
-		"├── ", "└── ",
+	unwantedChars := []string{
+		"├── ", "└── ", "/", "\\",
 		"│   ", "    ",
 		"│", "└", "├", "─",
 	}
-	for _, char := range treeChars {
+	for _, char := range unwantedChars {
 		line = strings.ReplaceAll(line, char, "")
 	}
 	return strings.TrimSpace(line)
