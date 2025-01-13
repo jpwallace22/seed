@@ -17,6 +17,7 @@ type TreeNode struct {
 	name     string
 	children []*TreeNode
 	isFile   bool
+	depth    int
 }
 
 func New(ctx ctx.SeedContext) *Parser {
@@ -41,7 +42,8 @@ func (p *Parser) ParseTreeString(tree string) error {
 		return fmt.Errorf("failed to parse tree: %w", err)
 	}
 
-	if err := p.createFileSystem(root, ""); err != nil {
+	err = p.createFileSystem(root, "")
+	if err != nil {
 		return err
 	}
 
@@ -56,27 +58,29 @@ func (p *Parser) buildTree(lines []string) (*TreeNode, error) {
 
 	rootName := strings.TrimSpace(lines[0])
 	if rootName == "" {
-		return nil, fmt.Errorf("invalid root name")
+		return nil, fmt.Errorf("a root is required")
 	}
 
 	root := &TreeNode{
 		name:     rootName,
 		isFile:   strings.Contains(rootName, ".") && rootName != ".",
 		children: make([]*TreeNode, 0),
+		depth:    0,
 	}
 
-	// Stack to keep track of the current path in the tree
-	stack := []*TreeNode{root}
-	previousDepth := 0
+	// Keep track of last nodes at each depth level
+	lastNodes := make(map[int]*TreeNode)
+	lastNodes[0] = root
 
 	for i := 1; i < len(lines); i++ {
-		line := strings.TrimSpace(lines[i])
-		if line == "" {
+		line := p.normalizeLine(lines[i])
+		if strings.TrimSpace(line) == "" {
 			continue
 		}
 
-		depth := p.getDepth(lines[i])
-		name := p.extractName(lines[i])
+		// Build the node
+		depth := p.getDepth(line)
+		name := p.extractName(line)
 		if name == "" {
 			continue
 		}
@@ -85,54 +89,45 @@ func (p *Parser) buildTree(lines []string) (*TreeNode, error) {
 			name:     name,
 			isFile:   strings.Contains(name, "."),
 			children: make([]*TreeNode, 0),
+			depth:    depth,
 		}
 
-		// Adjust stack based on depth
-		if depth > previousDepth {
-			// Going deeper - keep current path
-		} else if depth < previousDepth {
-			// Going back up - pop from stack until we're at the right level
-			stack = stack[:depth+1]
-		} else if depth == previousDepth && len(stack) > depth+1 {
-			// Same level - ensure stack has correct length
-			stack = stack[:depth+1]
+		// Assign the node to a parent
+		parentDepth := depth - 1
+		parent := lastNodes[parentDepth]
+		if parent == nil {
+			return nil, fmt.Errorf("invalid tree structure: missing parent at depth %d for node %s", parentDepth, name)
 		}
 
-		// Add node to its parent
-		parent := stack[depth]
 		parent.children = append(parent.children, node)
-
-		// If this is a directory, add it to the stack for potential children
-		if !node.isFile {
-			if depth+1 < len(stack) {
-				stack[depth+1] = node
-			} else {
-				stack = append(stack, node)
-			}
-		}
-
-		previousDepth = depth
+		lastNodes[depth] = node
 	}
 
 	return root, nil
 }
 
-// calculates the depth of a line based on tree characters
 func (p *Parser) getDepth(line string) int {
 	depth := 0
 	for i := 0; i < len(line); {
-		if strings.HasPrefix(line[i:], "│   ") || strings.HasPrefix(line[i:], "    ") {
+		if strings.HasPrefix(line[i:], "│   ") {
+			depth++
+			i += 4
+		} else if strings.HasPrefix(line[i:], "    ") {
+			depth++
+			i += 4
+		} else if strings.HasPrefix(line[i:], "├── ") {
+			depth++
+			i += 4
+		} else if strings.HasPrefix(line[i:], "└── ") {
 			depth++
 			i += 4
 		} else {
-			break
+			i++
 		}
 	}
-
 	return depth
 }
 
-// gets the actual name from a tree line by removing tree characters
 func (p *Parser) extractName(line string) string {
 	line = strings.TrimSpace(line)
 	treeChars := []string{
@@ -140,15 +135,12 @@ func (p *Parser) extractName(line string) string {
 		"│   ", "    ",
 		"│", "└", "├", "─",
 	}
-
 	for _, char := range treeChars {
 		line = strings.ReplaceAll(line, char, "")
 	}
-
 	return strings.TrimSpace(line)
 }
 
-// recursivly creates the actual directory structure from the parsed tree
 func (p *Parser) createFileSystem(node *TreeNode, parentPath string) error {
 	if node == nil {
 		return nil
@@ -156,7 +148,6 @@ func (p *Parser) createFileSystem(node *TreeNode, parentPath string) error {
 	logger := p.ctx.Logger
 	permissions := os.FileMode(0755)
 
-	// handle root node specially
 	currentPath := parentPath
 	if node.name != "." {
 		currentPath = filepath.Join(parentPath, node.name)
@@ -187,7 +178,7 @@ func (p *Parser) createFileSystem(node *TreeNode, parentPath string) error {
 		}
 	}
 
-	// loop it
+	// loop through children with the correct parent path
 	for _, child := range node.children {
 		if err := p.createFileSystem(child, currentPath); err != nil {
 			return err
@@ -195,4 +186,14 @@ func (p *Parser) createFileSystem(node *TreeNode, parentPath string) error {
 	}
 
 	return nil
+}
+
+// Need to use ASCII whitespace
+func (p *Parser) normalizeLine(line string) string {
+	return strings.Map(func(r rune) rune {
+		if r == '\u00a0' || r == ' ' { // Treat both as standard space
+			return ' '
+		}
+		return r
+	}, line)
 }
