@@ -18,12 +18,15 @@ type Flags struct {
 type Runner struct {
 	clipboard clipboard.Clipboard
 	ctx       ctx.SeedContext
+	parser    parser.Parser
 }
 
 func NewRunner(flags Flags) *Runner {
+	ctx := ctx.Build(flags.Silent)
 	return &Runner{
-		ctx:       *ctx.Build(flags.Silent),
+		ctx:       *ctx,
 		clipboard: clipboard.New(),
+		parser:    parser.New(*ctx),
 	}
 }
 
@@ -49,7 +52,6 @@ func runCommand(cmd *cobra.Command, args []string) error {
 }
 
 func (r *Runner) Run(fromClipboard bool, args []string) error {
-	parser := parser.New(r.ctx)
 	logger := r.ctx.Logger
 	if fromClipboard {
 		logger.Log("Planting from clipboard...")
@@ -59,13 +61,13 @@ func (r *Runner) Run(fromClipboard bool, args []string) error {
 			return fmt.Errorf("unable to access clipboard contents: %w", err)
 		}
 
-		if err := parser.ParseTreeString(text); err != nil {
+		if err := r.parser.ParseTreeString(text); err != nil {
 			return fmt.Errorf("unable to parse the tree structure: %w", err)
 		}
 	} else if len(args) > 0 {
 		logger.Log("Sprouting directories from seed: %s", args[0])
 
-		if err := parser.ParseTreeString(args[0]); err != nil {
+		if err := r.parser.ParseTreeString(args[0]); err != nil {
 			return fmt.Errorf("unable to parse the tree structure: %w", err)
 		}
 	} else {

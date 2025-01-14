@@ -9,7 +9,11 @@ import (
 	"github.com/jpwallace22/seed/internal/ctx"
 )
 
-type Parser struct {
+type Parser interface {
+	ParseTreeString(string) error
+}
+
+type parser struct {
 	ctx ctx.SeedContext
 }
 
@@ -20,14 +24,14 @@ type TreeNode struct {
 	depth    int
 }
 
-func New(ctx ctx.SeedContext) *Parser {
-	return &Parser{
+func New(ctx ctx.SeedContext) Parser {
+	return &parser{
 		ctx: ctx,
 	}
 }
 
 // converts a text representation of a directory tree into actual directories and files
-func (p *Parser) ParseTreeString(tree string) error {
+func (p *parser) ParseTreeString(tree string) error {
 	lines := strings.Split(strings.TrimSpace(tree), "\n")
 	if len(lines) == 0 {
 		return fmt.Errorf("no tree provided")
@@ -51,7 +55,7 @@ func (p *Parser) ParseTreeString(tree string) error {
 }
 
 // converts the string lines into a tree structure
-func (p *Parser) buildTree(lines []string) (*TreeNode, error) {
+func (p *parser) buildTree(lines []string) (*TreeNode, error) {
 	if len(lines) == 0 {
 		return nil, fmt.Errorf("no lines to parse")
 	}
@@ -108,7 +112,7 @@ func (p *Parser) buildTree(lines []string) (*TreeNode, error) {
 	return root, nil
 }
 
-func (p *Parser) getDepth(line string) int {
+func (p *parser) getDepth(line string) int {
 	depth := 0
 	for i := 0; i < len(line); {
 		if strings.HasPrefix(line[i:], "│   ") {
@@ -130,7 +134,7 @@ func (p *Parser) getDepth(line string) int {
 	return depth
 }
 
-func (p *Parser) extractName(line string) string {
+func (p *parser) extractName(line string) string {
 	line = strings.TrimSpace(line)
 	unwantedChars := []string{
 		"├── ", "└── ", "/", "\\",
@@ -143,7 +147,7 @@ func (p *Parser) extractName(line string) string {
 	return strings.TrimSpace(line)
 }
 
-func (p *Parser) createFileSystem(node *TreeNode, parentPath string) error {
+func (p *parser) createFileSystem(node *TreeNode, parentPath string) error {
 	if node == nil {
 		return nil
 	}

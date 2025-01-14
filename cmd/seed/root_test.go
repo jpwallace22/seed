@@ -10,6 +10,10 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+/* ******************************************
+*               Define mocks
+* *******************************************/
+
 type MockClipboard struct {
 	mock.Mock
 }
@@ -24,6 +28,39 @@ func (m *MockClipboard) PasteText() (string, error) {
 	return args.String(0), args.Error(1)
 }
 
+type MockParser struct {
+	mock.Mock
+}
+
+func (m *MockParser) ParseTreeString(tree string) error {
+	args := m.Called(tree)
+	return args.Error(0)
+}
+
+func buildTestRunner(silent bool) (*Runner, *MockClipboard, *MockParser) {
+	mockLogger := mocklogger.New()
+	mockClipboard := new(MockClipboard)
+	mockParser := new(MockParser)
+
+	testCtx := &ctx.SeedContext{
+		Logger: mockLogger,
+		GlobalFlags: ctx.GlobalFlags{
+			Silent: silent,
+		},
+	}
+
+	runner := &Runner{
+		ctx:       *testCtx,
+		clipboard: mockClipboard,
+		parser:    mockParser,
+	}
+
+	return runner, mockClipboard, mockParser
+}
+
+/* ******************************************
+*               Tests
+*********************************************/
 func TestNewRunner(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -114,45 +151,21 @@ func TestRunnerRun(t *testing.T) {
 			args:        []string{"test.txt"},
 			expectError: false,
 		},
-		{
-			name: "string tree provided",
-			flags: Flags{
-				FromClipboard: false,
-				Silent:        false,
-			},
-			args: []string{`my-react-app
-   ├── src
-   │   ├── components
-   │   ├── hooks
-   │   ├── utils
-   │   └── App.tsx
-   ├── public
-   │   └── index.html
-   └── package.json
-`},
-			expectError: false,
-		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockLogger := mocklogger.New()
-			mockClipboard := new(MockClipboard)
-
-			testCtx := &ctx.SeedContext{
-				Logger: mockLogger,
-				GlobalFlags: ctx.GlobalFlags{
-					Silent: tt.flags.Silent,
-				},
-			}
-
-			runner := &Runner{
-				ctx:       *testCtx,
-				clipboard: mockClipboard,
-			}
+			runner, mockClipboard, mockParser := buildTestRunner(tt.flags.Silent)
 
 			if tt.flags.FromClipboard {
 				mockClipboard.On("PasteText").Return(tt.clipContent, tt.clipError)
+				if tt.clipError == nil {
+					mockParser.On("ParseTreeString", tt.clipContent).Return(nil)
+				}
+			}
+
+			if len(tt.args) > 0 {
+				mockParser.On("ParseTreeString", tt.args[0]).Return(nil)
 			}
 			err := runner.Run(tt.flags.FromClipboard, tt.args)
 
@@ -165,6 +178,7 @@ func TestRunnerRun(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
+			mockParser.AssertExpectations(t)
 			mockClipboard.AssertExpectations(t)
 		})
 	}
@@ -193,11 +207,7 @@ func TestGetClipboardContent(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockClipboard := new(MockClipboard)
-			runner := &Runner{
-				clipboard: mockClipboard,
-				ctx:       *ctx.Build(false),
-			}
+			runner, mockClipboard, _ := buildTestRunner(true)
 
 			mockClipboard.On("PasteText").Return(tt.content, tt.err)
 			content, err := runner.getClipboardContent()
