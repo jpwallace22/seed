@@ -31,7 +31,7 @@ var rootCmd = &cobra.Command{
 	Version: "0.1.0",
 	Use:     "seed [path/to/tree]",
 	Short:   "Plant the seeds of your directory tree 🌱.",
-	Long:    "Seed is a CLI tool that helps you grow directory structures from a tree representation provided via file or clipboard.",
+	Long:    "Seed is a CLI tool that helps you grow directory structures from a tree representation provided via string or clipboard.",
 	Args:    cobra.MaximumNArgs(1),
 	RunE:    runCommand,
 }
@@ -53,6 +53,7 @@ func (r *Runner) Run(fromClipboard bool, args []string) error {
 	logger := r.ctx.Logger
 	if fromClipboard {
 		logger.Log("Planting from clipboard...")
+
 		text, err := r.getClipboardContent()
 		if err != nil {
 			return fmt.Errorf("unable to access clipboard contents: %w", err)
@@ -62,8 +63,11 @@ func (r *Runner) Run(fromClipboard bool, args []string) error {
 			return fmt.Errorf("unable to parse the tree structure: %w", err)
 		}
 	} else if len(args) > 0 {
-		logger.Log("Sprouting directories from file: %s", args[0])
-		// Logic to read and process the file
+		logger.Log("Sprouting directories from seed: %s", args[0])
+
+		if err := parser.ParseTreeString(args[0]); err != nil {
+			return fmt.Errorf("unable to parse the tree structure: %w", err)
+		}
 	} else {
 		return fmt.Errorf("no seeds provided: provide a path or use -c to source from your clipboard")
 	}

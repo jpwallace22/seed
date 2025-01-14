@@ -114,6 +114,24 @@ func TestRunnerRun(t *testing.T) {
 			args:        []string{"test.txt"},
 			expectError: false,
 		},
+		{
+			name: "string tree provided",
+			flags: Flags{
+				FromClipboard: false,
+				Silent:        false,
+			},
+			args: []string{`my-react-app
+   ├── src
+   │   ├── components
+   │   ├── hooks
+   │   ├── utils
+   │   └── App.tsx
+   ├── public
+   │   └── index.html
+   └── package.json
+`},
+			expectError: false,
+		},
 	}
 
 	for _, tt := range tests {

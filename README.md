@@ -22,15 +22,33 @@ seed --clipboard
 
 This will read a tree structure from your clipboard and create the corresponding directories and files.
 
-### From File (Coming Soon)
+### From String 
 
 ```bash
-seed path/to/tree.txt
+seed "my-react-app
+   ├── src
+   │   ├── components
+   │   ├── hooks
+   │   ├── utils
+   │   └── App.tsx
+   ├── public
+   │   └── index.html
+   └── package.json"
+```
+
+### From File (coming soon)
+
+```bash
+seed -f path/to/file
+# or
+seed --file path/to/file
 ```
 
 ## Input Format
 
 Seed accepts tree structures in the common tree command format. For example:
+
+### Using ASCII characters
 
 ```bash
 my-project
@@ -45,6 +63,25 @@ my-project
 │   └── index.html
 └── package.json
 ```
+### Using spaces
+
+> [!NOTE]  
+> Only 4 spaces is supported at this time
+
+```bash
+my-project
+    src
+        components
+            Button.tsx
+            Card.tsx
+        utils
+            helpers.ts
+        App.tsx
+    public
+        index.html
+    package.json
+```
+
 
 You can generate this format using:
 - The `tree` command in Unix-like systems
@@ -94,6 +131,13 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
+
+## Todo
+
+- Implement ability to parse from file path
+  - This should come with json/yml parsing
+- flag to adjust spacing between 2 and 4 for people who write their own trees with just spaces
+
 
 ## License
 
