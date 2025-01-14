@@ -31,7 +31,7 @@ jobs:
           make --version
 
       - name: Install dependencies
-        run: make install-deps
+        run: make install:deps
 
       - name: Run tests
         run: make test

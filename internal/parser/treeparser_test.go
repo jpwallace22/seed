@@ -6,13 +6,13 @@ import (
 	"testing"
 
 	"github.com/jpwallace22/seed/internal/ctx"
-	"github.com/jpwallace22/seed/pkg/logger"
+	logMock "github.com/jpwallace22/seed/pkg/logger/mock"
 	"github.com/stretchr/testify/suite"
 )
 
 type ParserTestSuite struct {
 	suite.Suite
-	logger  *mockLogger
+	logger  *logMock.MockLogger
 	parser  *Parser
 	tempDir string
 }
@@ -23,20 +23,13 @@ type mockLogger struct {
 	ErrorLogs []string
 }
 
-func (m *mockLogger) Info(msg string, v ...interface{})         { m.InfoLogs = append(m.InfoLogs, msg) }
-func (m *mockLogger) Warn(msg string, v ...interface{})         { m.WarnLogs = append(m.WarnLogs, msg) }
-func (m *mockLogger) Error(msg string, v ...interface{})        { m.ErrorLogs = append(m.ErrorLogs, msg) }
-func (m *mockLogger) Log(msg string, v ...interface{})          { m.ErrorLogs = append(m.ErrorLogs, msg) }
-func (m *mockLogger) Success(msg string, v ...interface{})      { m.ErrorLogs = append(m.ErrorLogs, msg) }
-func (m *mockLogger) WithField(key, value string) logger.Logger { return m }
-
 func (s *ParserTestSuite) SetupTest() {
 	var err error
 	s.tempDir, err = os.MkdirTemp("", "parser_test_*")
 	s.Require().NoError(err)
 	s.Require().NoError(os.Chdir(s.tempDir))
 
-	s.logger = &mockLogger{}
+	s.logger = logMock.New()
 	testCtx := ctx.SeedContext{
 		Logger: s.logger,
 	}

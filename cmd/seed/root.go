@@ -10,27 +10,21 @@ import (
 	clipboard "github.com/tiagomelo/go-clipboard/clipboard"
 )
 
-type Runner struct {
-	ctx       ctx.SeedContext
-	clipboard clipboard.Clipboard
+type Flags struct {
+	FromClipboard bool
+	Silent        bool
 }
 
-func NewRunner(silent bool) *Runner {
+type Runner struct {
+	clipboard clipboard.Clipboard
+	ctx       ctx.SeedContext
+}
+
+func NewRunner(flags Flags) *Runner {
 	return &Runner{
-		ctx:       *ctx.Build(silent),
+		ctx:       *ctx.Build(flags.Silent),
 		clipboard: clipboard.New(),
 	}
-}
-
-var (
-	// filePath      string //TODO: implement this feature
-	fromClipboard bool
-	silent        bool
-)
-
-func init() {
-	rootCmd.Flags().BoolVarP(&fromClipboard, "clipboard", "c", false, "Use tree structure from clipboard.")
-	rootCmd.Flags().BoolVarP(&silent, "silent", "s", false, "If true, suppresses all non-essential console output.")
 }
 
 var rootCmd = &cobra.Command{
@@ -42,9 +36,16 @@ var rootCmd = &cobra.Command{
 	RunE:    runCommand,
 }
 
+var flags Flags
+
+func init() {
+	rootCmd.Flags().BoolVarP(&flags.FromClipboard, "clipboard", "c", false, "Use tree structure from clipboard.")
+	rootCmd.Flags().BoolVarP(&flags.Silent, "silent", "s", false, "If true, suppresses all non-essential console output.")
+}
+
 func runCommand(cmd *cobra.Command, args []string) error {
-	runner := NewRunner(silent)
-	return runner.Run(fromClipboard, args)
+	runner := NewRunner(flags)
+	return runner.Run(flags.FromClipboard, args)
 }
 
 func (r *Runner) Run(fromClipboard bool, args []string) error {
