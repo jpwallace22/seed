@@ -1,8 +1,9 @@
 builds:
   - binary: seed
+    main: ./cmd/seed
     goos:
-      - darwin
       - linux
+      - darwin
       - windows
     goarch:
       - amd64
@@ -11,24 +12,30 @@ builds:
       - CGO_ENABLED=0
     ldflags:
       - -s -w -X main.version={{.Version}}
+    ignore:
+      - goos: windows
+        goarch: arm64 # Windows ARM64 might not be needed yet
 
 archives:
   - format: tar.gz
-    # This naming format is important for Homebrew
     name_template: >-
       {{ .ProjectName }}_
       {{- .Version }}_
       {{- .Os }}_
       {{- .Arch }}
-    # Windows users expect zip files
     format_overrides:
       - goos: windows
         format: zip
     files:
       - README.md
       - LICENSE
+    wrap_in_directory: true
 
-# Generate a CHANGELOG from git commits
+release:
+  prerelease: auto
+  draft: false
+  make_latest: true # Marks as "Latest" on GitHub
+
 changelog:
   sort: asc
   filters:
@@ -36,7 +43,5 @@ changelog:
       - "^docs:"
       - "^test:"
       - "^ci:"
-
-# SHA256 checksums are crucial for Homebrew
-checksum:
-  name_template: "checksums.txt"
+      - Merge pull request
+      - Merge branch

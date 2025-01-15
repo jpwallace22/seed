@@ -17,8 +17,8 @@ type Flags struct {
 
 type Runner struct {
 	clipboard clipboard.Clipboard
-	ctx       ctx.SeedContext
 	parser    parser.Parser
+	ctx       ctx.SeedContext
 }
 
 func NewRunner(flags Flags) *Runner {
@@ -32,9 +32,9 @@ func NewRunner(flags Flags) *Runner {
 
 var rootCmd = &cobra.Command{
 	Version: "0.1.0",
-	Use:     "seed [path/to/tree]",
+	Use:     "seed [tree string]",
 	Short:   "Plant the seeds of your directory tree 🌱.",
-	Long:    "Seed is a CLI tool that helps you grow directory structures from a tree representation provided via string or clipboard.",
+	Long:    "Seed is a CLI tool that helps you grow directory structures from a tree representation.",
 	Args:    cobra.MaximumNArgs(1),
 	RunE:    runCommand,
 }
