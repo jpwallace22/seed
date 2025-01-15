@@ -4,9 +4,59 @@ Seed is a CLI tool that helps you quickly create directory structures from a tre
 
 ## Installation
 
+Curently supported is golang, homebrew, and good ol' downloading the binary yourself. More support to come. 
+
+### Golang
+
 ```bash
 go install github.com/jpwallace22/seed@latest
 ```
+
+### Homebrew
+
+```bash
+brew tap jpwallace22/seed/seed
+brew install seed
+```
+
+### Download Binary
+
+1. Go to the [Releases](https://github.com/jpwallace22/seed/releases) page
+2. Download the appropriate archive for your system:
+
+   **macOS (Apple Silicon / M1, M2)**
+   - `seed_darwin_arm64.tar.gz`
+
+   **macOS (Intel)**
+   - `seed_darwin_amd64.tar.gz`
+
+   **Linux (64-bit)**
+   - `seed_linux_amd64.tar.gz`
+
+   **Linux (ARM64)**
+   - `seed_linux_arm64.tar.gz`
+
+   **Windows**
+   - `seed_windows_amd64.zip`
+
+3. Extract the archive:
+   
+   **macOS/Linux**
+   ```sh
+   tar -xzf seed_darwin_arm64.tar.gz  # Replace with your downloaded file
+   ```
+
+   **Windows**
+   - Right-click the downloaded zip file and select "Extract All"
+
+4. (Optional) Move the binary to a directory in your PATH for easier access:
+
+   **macOS/Linux**
+   ```sh
+   sudo mv seed /usr/local/bin/
+   ```
+
+You can verify the download using the provided checksums file.
 
 ## Usage
 
