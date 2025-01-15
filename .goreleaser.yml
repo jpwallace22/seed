@@ -31,6 +31,9 @@ archives:
       - LICENSE
     wrap_in_directory: true
 
+checksum:
+  name_template: "checksums.txt"
+
 release:
   prerelease: auto
   draft: false
