@@ -29,11 +29,11 @@ jobs:
           version: latest
           args: release --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Update Homebrew formula
         run: |
           chmod +x tools/scripts/update-homebrew-formula.sh
           tools/scripts/update-homebrew-formula.sh ${GITHUB_REF#refs/tags/}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}

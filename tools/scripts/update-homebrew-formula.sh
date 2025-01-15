@@ -30,6 +30,8 @@ sed -i.bak "s/sha256 \".*\".*darwin_amd64/sha256 \"${DARWIN_AMD64_SHA}\"/" Formu
 sed -i.bak "s/sha256 \".*\".*linux_arm64/sha256 \"${LINUX_ARM64_SHA}\"/" Formula/seed.rb
 sed -i.bak "s/sha256 \".*\".*linux_amd64/sha256 \"${LINUX_AMD64_SHA}\"/" Formula/seed.rb
 
+rm Formula/seed.rb.bak
+
 # Verify and commit
 git config user.name 'GitHub Action'
 git config user.email 'action@github.com'
