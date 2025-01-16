@@ -1,4 +1,4 @@
-package main
+package runner
 
 import (
 	"errors"
@@ -37,7 +37,7 @@ func (m *MockParser) ParseTreeString(tree string) error {
 	return args.Error(0)
 }
 
-func buildTestRunner(silent bool) (*Runner, *MockClipboard, *MockParser) {
+func buildTestRunner(silent bool) (*RootRunner, *MockClipboard, *MockParser) {
 	mockLogger := mocklogger.New()
 	mockClipboard := new(MockClipboard)
 	mockParser := new(MockParser)
@@ -49,7 +49,7 @@ func buildTestRunner(silent bool) (*Runner, *MockClipboard, *MockParser) {
 		},
 	}
 
-	runner := &Runner{
+	runner := &RootRunner{
 		ctx:       *testCtx,
 		clipboard: mockClipboard,
 		parser:    mockParser,
@@ -64,25 +64,25 @@ func buildTestRunner(silent bool) (*Runner, *MockClipboard, *MockParser) {
 func TestNewRunner(t *testing.T) {
 	tests := []struct {
 		name  string
-		flags Flags
+		flags RootFlags
 	}{
 		{
 			name: "creates runner with all flags disabled",
-			flags: Flags{
+			flags: RootFlags{
 				Silent:        false,
 				FromClipboard: false,
 			},
 		},
 		{
 			name: "creates runner with silent mode enabled",
-			flags: Flags{
+			flags: RootFlags{
 				Silent:        true,
 				FromClipboard: false,
 			},
 		},
 		{
 			name: "creates runner with clipboard mode enabled",
-			flags: Flags{
+			flags: RootFlags{
 				Silent:        false,
 				FromClipboard: true,
 			},
@@ -91,7 +91,7 @@ func TestNewRunner(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			runner := NewRunner(tt.flags)
+			runner := NewRootRunner(tt.flags)
 
 			assert.NotNil(t, runner)
 			assert.NotNil(t, runner.ctx)
@@ -108,12 +108,12 @@ func TestRunnerRun(t *testing.T) {
 		clipContent   string
 		errorContains string
 		args          []string
-		flags         Flags
+		flags         RootFlags
 		expectError   bool
 	}{
 		{
 			name: "successful clipboard read",
-			flags: Flags{
+			flags: RootFlags{
 				FromClipboard: true,
 				Silent:        false,
 			},
@@ -123,7 +123,7 @@ func TestRunnerRun(t *testing.T) {
 		},
 		{
 			name: "clipboard read error",
-			flags: Flags{
+			flags: RootFlags{
 				FromClipboard: true,
 				Silent:        false,
 			},
@@ -134,7 +134,7 @@ func TestRunnerRun(t *testing.T) {
 		},
 		{
 			name: "no input source provided",
-			flags: Flags{
+			flags: RootFlags{
 				FromClipboard: false,
 				Silent:        false,
 			},
@@ -144,7 +144,7 @@ func TestRunnerRun(t *testing.T) {
 		},
 		{
 			name: "file path provided",
-			flags: Flags{
+			flags: RootFlags{
 				FromClipboard: false,
 				Silent:        false,
 			},
