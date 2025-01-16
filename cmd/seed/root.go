@@ -15,16 +15,19 @@ var rootCmd = &cobra.Command{
 	Long:    "Seed is a CLI tool that helps you grow directory structures from a tree representation provided via string or clipboard.",
 	Args:    cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		runner := runner.NewRootRunner(flags)
-		return runner.Run(flags.FromClipboard, args)
+		runner := runner.NewRootRunner(config)
+		return runner.Run(flags, args)
 	},
 }
 
-var flags runner.RootFlags
+var (
+	flags  runner.RootFlags
+	config runner.Config
+)
 
 func init() {
 	rootCmd.Flags().BoolVarP(&flags.FromClipboard, "clipboard", "c", false, "Use tree structure from clipboard.")
-	rootCmd.Flags().BoolVarP(&flags.Silent, "silent", "s", false, "If true, suppresses all non-essential console output.")
+	rootCmd.Flags().BoolVarP(&config.Silent, "silent", "s", false, "If true, suppresses all non-essential console output.")
 }
 
 func Execute() {

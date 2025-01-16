@@ -10,7 +10,6 @@ import (
 
 type RootFlags struct {
 	FromClipboard bool
-	Silent        bool
 }
 
 type RootRunner struct {
@@ -19,8 +18,8 @@ type RootRunner struct {
 	ctx       ctx.SeedContext
 }
 
-func NewRootRunner(flags RootFlags) *RootRunner {
-	ctx := ctx.Build(flags.Silent)
+func NewRootRunner(config Config) Runner[RootFlags] {
+	ctx := ctx.Build(config.Silent)
 	return &RootRunner{
 		ctx:       *ctx,
 		clipboard: clipboard.New(),
@@ -28,9 +27,9 @@ func NewRootRunner(flags RootFlags) *RootRunner {
 	}
 }
 
-func (r *RootRunner) Run(fromClipboard bool, args []string) error {
+func (r *RootRunner) Run(flags RootFlags, args []string) error {
 	logger := r.ctx.Logger
-	if fromClipboard {
+	if flags.FromClipboard {
 		logger.Log("Planting from clipboard...")
 
 		text, err := r.getClipboardContent()

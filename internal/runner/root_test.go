@@ -63,40 +63,49 @@ func buildTestRunner(silent bool) (*RootRunner, *MockClipboard, *MockParser) {
 *********************************************/
 func TestNewRunner(t *testing.T) {
 	tests := []struct {
-		name  string
-		flags RootFlags
+		name   string
+		flags  RootFlags
+		config Config
 	}{
 		{
 			name: "creates runner with all flags disabled",
 			flags: RootFlags{
-				Silent:        false,
 				FromClipboard: false,
+			},
+			config: Config{
+				Silent: false,
 			},
 		},
 		{
 			name: "creates runner with silent mode enabled",
 			flags: RootFlags{
-				Silent:        true,
 				FromClipboard: false,
+			},
+			config: Config{
+				Silent: true,
 			},
 		},
 		{
 			name: "creates runner with clipboard mode enabled",
 			flags: RootFlags{
-				Silent:        false,
 				FromClipboard: true,
+			},
+			config: Config{
+				Silent: false,
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			runner := NewRootRunner(tt.flags)
+			runner := NewRootRunner(tt.config)
+			rootRunner, ok := runner.(*RootRunner)
 
+			assert.True(t, ok)
 			assert.NotNil(t, runner)
-			assert.NotNil(t, runner.ctx)
-			assert.NotNil(t, runner.clipboard)
-			assert.Equal(t, tt.flags.Silent, runner.ctx.GlobalFlags.Silent)
+			assert.NotNil(t, rootRunner.ctx)
+			assert.NotNil(t, rootRunner.clipboard)
+			assert.Equal(t, tt.config.Silent, rootRunner.ctx.GlobalFlags.Silent)
 		})
 	}
 }
@@ -110,12 +119,15 @@ func TestRunnerRun(t *testing.T) {
 		args          []string
 		flags         RootFlags
 		expectError   bool
+		config        Config
 	}{
 		{
 			name: "successful clipboard read",
 			flags: RootFlags{
 				FromClipboard: true,
-				Silent:        false,
+			},
+			config: Config{
+				Silent: false,
 			},
 			clipContent: "test-content",
 			clipError:   nil,
@@ -125,7 +137,9 @@ func TestRunnerRun(t *testing.T) {
 			name: "clipboard read error",
 			flags: RootFlags{
 				FromClipboard: true,
-				Silent:        false,
+			},
+			config: Config{
+				Silent: false,
 			},
 			clipContent:   "",
 			clipError:     errors.New("clipboard error"),
@@ -136,7 +150,9 @@ func TestRunnerRun(t *testing.T) {
 			name: "no input source provided",
 			flags: RootFlags{
 				FromClipboard: false,
-				Silent:        false,
+			},
+			config: Config{
+				Silent: false,
 			},
 			args:          []string{},
 			expectError:   true,
@@ -146,7 +162,9 @@ func TestRunnerRun(t *testing.T) {
 			name: "file path provided",
 			flags: RootFlags{
 				FromClipboard: false,
-				Silent:        false,
+			},
+			config: Config{
+				Silent: false,
 			},
 			args:        []string{"test.txt"},
 			expectError: false,
@@ -155,7 +173,7 @@ func TestRunnerRun(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			runner, mockClipboard, mockParser := buildTestRunner(tt.flags.Silent)
+			runner, mockClipboard, mockParser := buildTestRunner(tt.config.Silent)
 
 			if tt.flags.FromClipboard {
 				mockClipboard.On("PasteText").Return(tt.clipContent, tt.clipError)
@@ -167,7 +185,7 @@ func TestRunnerRun(t *testing.T) {
 			if len(tt.args) > 0 {
 				mockParser.On("ParseTreeString", tt.args[0]).Return(nil)
 			}
-			err := runner.Run(tt.flags.FromClipboard, tt.args)
+			err := runner.Run(tt.flags, tt.args)
 
 			if tt.expectError {
 				assert.Error(t, err)
