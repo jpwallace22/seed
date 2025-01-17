@@ -20,6 +20,7 @@ func init() {
 	// Flags
 	rootCmd.Flags().BoolVarP(&flags.FromClipboard, "clipboard", "c", false, "Use tree structure from clipboard.")
 	rootCmd.Flags().StringVarP(&flags.FilePath, "file", "f", "", "Use tree structure from a file.")
+	// rootCmd.Flags().VarP(&flags.Format, "format", "F", "Format of the input [tree, json, yamlj]") // TODO: implement different parsers
 }
 
 var rootCmd = &cobra.Command{
