@@ -86,7 +86,7 @@ seed "my-react-app
    └── package.json"
 ```
 
-### From File (coming soon)
+### From File 
 
 ```bash
 seed -f path/to/file
@@ -138,6 +138,8 @@ You can generate this format using:
 - VS Code extensions like "File Tree Generator"
 - Or manually create it following the format above
 
+#### JSON and YAML are coming soon!
+
 ## Examples
 
 1. **Basic React Project Structure**
@@ -184,9 +186,11 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 
 ## Todo
 
-- Implement ability to parse from file path
-  - This should come with json/yml parsing
+- ~~Implement ability to parse from file path~~
+- Add JSON and YAML support 
+- Support StdIn
 - flag to adjust spacing between 2 and 4 for people who write their own trees with just spaces
+
 
 
 ## License
