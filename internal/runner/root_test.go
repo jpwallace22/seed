@@ -2,6 +2,7 @@ package runner
 
 import (
 	"errors"
+	"os"
 	"testing"
 
 	"github.com/jpwallace22/seed/internal/ctx"
@@ -246,8 +247,67 @@ func TestGetClipboardContent(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
-			// Verify all mock expectations were met
 			mockClipboard.AssertExpectations(t)
+			mockParser.AssertExpectations(t)
+		})
+	}
+}
+
+func TestParseFromFile(t *testing.T) {
+	tests := []struct {
+		name          string
+		filePath      string
+		fileContent   string
+		errorContains string
+		expectError   bool
+	}{
+		{
+			name:        "successful file read",
+			filePath:    "test.txt",
+			fileContent: "test content",
+			expectError: false,
+		},
+		{
+			name:          "file not found",
+			filePath:      "nonexistent.txt",
+			fileContent:   "",
+			expectError:   true,
+			errorContains: "file read error",
+		},
+		{
+			name:          "empty file",
+			filePath:      "empty.txt",
+			fileContent:   "",
+			expectError:   true,
+			errorContains: "no such file or directory",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runner, _, mockParser := buildTestRunner(true)
+
+			if !tt.expectError {
+				mockParser.On("ParseTreeString", tt.fileContent).Return(nil)
+			}
+
+			if tt.fileContent != "" {
+				err := os.WriteFile(tt.filePath, []byte(tt.fileContent), 0644)
+				defer os.Remove(tt.filePath)
+				assert.NoError(t, err)
+			}
+
+			err := runner.parseFromFile(tt.filePath)
+
+			if tt.expectError {
+				assert.Error(t, err)
+				if tt.errorContains != "" {
+					assert.Contains(t, err.Error(), tt.errorContains)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+
 			mockParser.AssertExpectations(t)
 		})
 	}
