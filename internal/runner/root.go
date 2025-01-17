@@ -3,6 +3,7 @@ package runner
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/jpwallace22/seed/internal/ctx"
 	"github.com/jpwallace22/seed/internal/parser"
@@ -73,7 +74,6 @@ func (r *RootRunner) Run(flags RootFlags, args []string) error {
 		return nil
 
 	case flags.FilePath != "":
-		logger.Log("Sowing the seeds of " + flags.FilePath)
 		if err := r.parseFromFile(flags.FilePath); err != nil {
 			return fmt.Errorf("unable to parse from file: %w", err)
 		}
@@ -92,13 +92,13 @@ func (r *RootRunner) Run(flags RootFlags, args []string) error {
 	return r.ctx.Cobra.Help()
 }
 
-func (r *RootRunner) parseFromFile(filePath string) error {
-	data, err := os.ReadFile(filePath)
+func (r *RootRunner) parseFromFile(path string) error {
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("file read error: %w", err)
 	}
 
-	r.ctx.Logger.Log("Planting from file...")
+	r.ctx.Logger.Log("Sowing the seeds of " + filepath.Base(path) + "...")
 	if err := r.parser.ParseTreeString(string(data)); err != nil {
 		return fmt.Errorf("unable to parse the tree structure: %w", err)
 	}
