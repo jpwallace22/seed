@@ -24,7 +24,7 @@ func init() {
 }
 
 var rootCmd = &cobra.Command{
-	Version: "0.1.0",
+	Version: "0.1.1",
 	Use:     "seed [string]",
 	Short:   "Plant the seeds of your directory tree 🌱.",
 	Long:    "Seed is a CLI tool that helps you grow directory structures from a tree representation provided via string or clipboard.",
