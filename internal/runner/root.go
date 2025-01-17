@@ -5,10 +5,12 @@ import (
 
 	"github.com/jpwallace22/seed/internal/ctx"
 	"github.com/jpwallace22/seed/internal/parser"
+	"github.com/spf13/cobra"
 	clipboard "github.com/tiagomelo/go-clipboard/clipboard"
 )
 
 type RootFlags struct {
+	FilePath      string
 	FromClipboard bool
 }
 
@@ -18,8 +20,8 @@ type RootRunner struct {
 	ctx       ctx.SeedContext
 }
 
-func NewRootRunner(config Config) Runner[RootFlags] {
-	ctx := ctx.Build(config.Silent)
+func NewRootRunner(cobra *cobra.Command, silent bool) Runner[RootFlags] {
+	ctx := ctx.Build(cobra, silent)
 	return &RootRunner{
 		ctx:       *ctx,
 		clipboard: clipboard.New(),
@@ -29,35 +31,47 @@ func NewRootRunner(config Config) Runner[RootFlags] {
 
 func (r *RootRunner) Run(flags RootFlags, args []string) error {
 	logger := r.ctx.Logger
-	if flags.FromClipboard {
-		logger.Log("Planting from clipboard...")
+	success := false
 
-		text, err := r.getClipboardContent()
+	switch {
+
+	case flags.FromClipboard:
+		err := r.parseFromClipboard()
 		if err != nil {
-			return fmt.Errorf("unable to access clipboard contents: %w", err)
+			return fmt.Errorf("unable to parse from clipboard: %w", err)
 		}
+		success = true
 
-		if err := r.parser.ParseTreeString(text); err != nil {
-			return fmt.Errorf("unable to parse the tree structure: %w", err)
-		}
-	} else if len(args) > 0 {
+	case flags.FilePath != "":
+		logger.Log("Sowing the seeds of " + flags.FilePath)
+		success = true
+
+	case len(args) > 0:
 		logger.Log("Sprouting directories from seed: %s", args[0])
 
 		if err := r.parser.ParseTreeString(args[0]); err != nil {
 			return fmt.Errorf("unable to parse the tree structure: %w", err)
 		}
-	} else {
-		return fmt.Errorf("no seeds provided: provide a path or use -c to source from your clipboard")
 	}
 
-	logger.Success("Your directory tree has grown successfully!")
+	if success {
+		logger.Success("Your directory tree has grown successfully!")
+	} else {
+		r.ctx.Cobra.Help()
+	}
 	return nil
 }
 
-func (r *RootRunner) getClipboardContent() (string, error) {
+func (r *RootRunner) parseFromClipboard() error {
 	text, err := r.clipboard.PasteText()
 	if err != nil {
-		return "", fmt.Errorf("clipboard read error: %w", err)
+		return fmt.Errorf("clipboard read error: %w", err)
 	}
-	return text, nil
+
+	r.ctx.Logger.Log("Planting from clipboard...")
+
+	if err := r.parser.ParseTreeString(text); err != nil {
+		return fmt.Errorf("unable to parse the tree structure: %w", err)
+	}
+	return nil
 }

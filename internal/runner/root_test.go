@@ -6,6 +6,7 @@ import (
 
 	"github.com/jpwallace22/seed/internal/ctx"
 	mocklogger "github.com/jpwallace22/seed/pkg/logger/mock"
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -41,12 +42,16 @@ func buildTestRunner(silent bool) (*RootRunner, *MockClipboard, *MockParser) {
 	mockLogger := mocklogger.New()
 	mockClipboard := new(MockClipboard)
 	mockParser := new(MockParser)
+	mockCmd := &cobra.Command{
+		Use: "test",
+	}
 
 	testCtx := &ctx.SeedContext{
 		Logger: mockLogger,
 		GlobalFlags: ctx.GlobalFlags{
 			Silent: silent,
 		},
+		Cobra: mockCmd,
 	}
 
 	runner := &RootRunner{
@@ -98,7 +103,10 @@ func TestNewRunner(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			runner := NewRootRunner(tt.config)
+			cmd := &cobra.Command{
+				Use: "test",
+			}
+			runner := NewRootRunner(cmd, tt.config.Silent)
 			rootRunner, ok := runner.(*RootRunner)
 
 			assert.True(t, ok)
@@ -144,7 +152,7 @@ func TestRunnerRun(t *testing.T) {
 			clipContent:   "",
 			clipError:     errors.New("clipboard error"),
 			expectError:   true,
-			errorContains: "unable to access clipboard contents",
+			errorContains: "unable to parse from clipboard: clipboard read error: clipboard error",
 		},
 		{
 			name: "no input source provided",
@@ -154,9 +162,8 @@ func TestRunnerRun(t *testing.T) {
 			config: Config{
 				Silent: false,
 			},
-			args:          []string{},
-			expectError:   true,
-			errorContains: "no seeds provided",
+			args:        []string{},
+			expectError: false,
 		},
 		{
 			name: "file path provided",
@@ -216,7 +223,7 @@ func TestGetClipboardContent(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name:        "clipboard read error",
+			name:        "unable to parse from clipboard: clipboard read error: clipboard error",
 			content:     "",
 			err:         errors.New("mock clipboard error"),
 			expectError: true,
@@ -225,21 +232,23 @@ func TestGetClipboardContent(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			runner, mockClipboard, _ := buildTestRunner(true)
+			runner, mockClipboard, mockParser := buildTestRunner(true)
 
+			if !tt.expectError {
+				mockParser.On("ParseTreeString", tt.content).Return(nil)
+			}
 			mockClipboard.On("PasteText").Return(tt.content, tt.err)
-			content, err := runner.getClipboardContent()
+			err := runner.parseFromClipboard()
 
 			if tt.expectError {
 				assert.Error(t, err)
-				assert.Empty(t, content)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.content, content)
 			}
 
 			// Verify all mock expectations were met
 			mockClipboard.AssertExpectations(t)
+			mockParser.AssertExpectations(t)
 		})
 	}
 }
