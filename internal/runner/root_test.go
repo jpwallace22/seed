@@ -184,7 +184,7 @@ func TestFileOperations(t *testing.T) {
 				FilePath: "empty.txt",
 			},
 			expectError:   true,
-			errorContains: "no such file or directory",
+			errorContains: "file read error",
 		},
 	}
 
