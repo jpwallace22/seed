@@ -8,10 +8,10 @@ import (
 )
 
 type stringParser struct {
-	ctx ctx.SeedContext
+	ctx *ctx.SeedContext
 }
 
-func NewTreeParser(ctx ctx.SeedContext) Parser {
+func NewTreeParser(ctx *ctx.SeedContext) Parser {
 	return &stringParser{
 		ctx: ctx,
 	}

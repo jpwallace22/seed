@@ -10,7 +10,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var flags cmdFlags.Flags
+var flags = cmdFlags.Flags{
+	Root: cmdFlags.RootFlags{
+		Silent:        false,
+		FromClipboard: false,
+		FilePath:      "",
+		Format:        cmdFlags.Formats.Tree,
+	},
+}
 
 func init() {
 	// Persistent Flags

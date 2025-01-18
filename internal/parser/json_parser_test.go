@@ -24,7 +24,7 @@ func (s *JsonTestSuite) SetupTest() {
 	s.Require().NoError(os.Chdir(s.tempDir))
 
 	s.logger = logMock.New()
-	testCtx := ctx.SeedContext{
+	testCtx := &ctx.SeedContext{
 		Logger: s.logger,
 	}
 	s.parser = NewJSONParser(testCtx)

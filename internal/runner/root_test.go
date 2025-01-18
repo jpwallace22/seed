@@ -57,7 +57,7 @@ func buildTestRunner(testFlags flags.RootFlags) (*RootRunner, *MockClipboard, *M
 	}
 
 	runner := &RootRunner{
-		ctx:       *testCtx,
+		ctx:       testCtx,
 		clipboard: mockClipboard,
 		parser:    mockParser,
 	}

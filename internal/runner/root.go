@@ -18,13 +18,13 @@ const (
 type RootRunner struct {
 	clipboard clipboard.Clipboard
 	parser    parser.Parser
-	ctx       ctx.SeedContext
+	ctx       *ctx.SeedContext
 }
 
 func NewRootRunner(cobra *cobra.Command, ctx *ctx.SeedContext) Runner {
 	parser, _ := parser.NewParser(ctx, parser.WithFormat(ctx.Flags.Root.Format))
 	return &RootRunner{
-		ctx:       *ctx,
+		ctx:       ctx,
 		clipboard: clipboard.New(),
 		parser:    parser,
 	}

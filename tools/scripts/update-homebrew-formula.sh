@@ -42,6 +42,7 @@ sed -i.bak "/# darwin_amd64/ s/sha256 \"[^\"]*\"/sha256 \"${DARWIN_AMD64}\"/" Fo
 sed -i.bak "/# linux_arm64/ s/sha256 \"[^\"]*\"/sha256 \"${LINUX_ARM64}\"/" Formula/seed.rb
 sed -i.bak "/# linux_amd64/ s/sha256 \"[^\"]*\"/sha256 \"${LINUX_AMD64}\"/" Formula/seed.rb
 
+log "Cleaning up..."
 rm Formula/seed.rb.bak
 
 # Verify the changes

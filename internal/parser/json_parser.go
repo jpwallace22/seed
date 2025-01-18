@@ -20,10 +20,10 @@ type Report struct {
 }
 
 type jsonParser struct {
-	ctx ctx.SeedContext
+	ctx *ctx.SeedContext
 }
 
-func NewJSONParser(ctx ctx.SeedContext) Parser {
+func NewJSONParser(ctx *ctx.SeedContext) Parser {
 	return &jsonParser{ctx: ctx}
 }
 

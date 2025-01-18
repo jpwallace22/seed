@@ -41,9 +41,9 @@ func NewParser(ctx *ctx.SeedContext, opts ...Option) (Parser, error) {
 
 	switch cfg.format {
 	case flags.Formats.JSON:
-		return NewJSONParser(*ctx), nil
+		return NewJSONParser(ctx), nil
 	case flags.Formats.Tree:
-		return NewTreeParser(*ctx), nil
+		return NewTreeParser(ctx), nil
 	default:
 		return nil, fmt.Errorf("unsupported parser format: %s", cfg.format)
 	}
