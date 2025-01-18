@@ -48,5 +48,6 @@ changelog:
       - "^ci:"
       - "^chore:"
       - "^refactor:"
+      - "^WIP:"
       - Merge pull request
       - Merge branch

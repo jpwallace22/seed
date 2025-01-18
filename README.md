@@ -37,7 +37,7 @@ go install github.com/jpwallace22/seed@latest
 ### Homebrew
 
 ```bash
-brew tap jpwallace22/seed/seed
+brew tap jpwallace22/seed
 brew install seed
 ```
 
