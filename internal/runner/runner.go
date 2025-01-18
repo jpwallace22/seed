@@ -1,7 +1,7 @@
 package runner
 
-type Runner[T any] interface {
-	Run(flags T, args []string) error
+type Runner interface {
+	Run(args []string) error
 }
 
 type Config struct {
