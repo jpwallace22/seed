@@ -245,6 +245,35 @@ func (s *JsonTestSuite) TestMissingFields() {
 	})
 }
 
+func (s *JsonTestSuite) TestWithoutReport() {
+	input := `[
+		{"type":"directory","name":"root","contents":[
+			{"type":"directory","name":"docs","contents":[
+				{"type":"file","name":"readme.md"}
+			]},
+			{"type":"file","name":"config.json"}
+		]}
+	]`
+
+	expectedFiles := []string{
+		"root/docs/readme.md",
+		"root/config.json",
+	}
+	expectedDirs := []string{
+		"root",
+		"root/docs",
+	}
+
+	s.Run("create structure without report section", func() {
+		s.Require().NoError(s.parser.ParseTree(input))
+		s.verifyStructure(expectedFiles, expectedDirs)
+
+		// Verify specific files exist
+		s.FileExists(filepath.Join(s.tempDir, "root/docs/readme.md"))
+		s.FileExists(filepath.Join(s.tempDir, "root/config.json"))
+	})
+}
+
 func (s *JsonTestSuite) verifyStructure(expectedFiles, expectedDirs []string) {
 	var actualFiles, actualDirs []string
 
