@@ -1,40 +1,93 @@
 #!/usr/bin/env bash
 
-set -e
+# Exit on any error
+set -euo pipefail
 
-VERSION=${1#v} # Remove 'v' prefix if present
-
-if [ ! -f dist/checksums.txt ]; then
-  echo "Checksums file not found"
+# Check if version argument is provided
+if [ $# -ne 1 ]; then
+  echo "Usage: $0 <version>"
   exit 1
 fi
 
-# Get macOS checksums
-DARWIN_ARM64_SHA=$(cat dist/checksums.txt | grep darwin_arm64.tar.gz | awk '{print $1}')
-DARWIN_AMD64_SHA=$(cat dist/checksums.txt | grep darwin_amd64.tar.gz | awk '{print $1}')
+# Remove 'v' prefix if present
+VERSION=${1#v}
 
-# Get Linux checksums
-LINUX_ARM64_SHA=$(cat dist/checksums.txt | grep linux_arm64.tar.gz | awk '{print $1}')
-LINUX_AMD64_SHA=$(cat dist/checksums.txt | grep linux_amd64.tar.gz | awk '{print $1}')
+# Check for checksums file
+if [ ! -f dist/checksums.txt ]; then
+  echo "Error: checksums.txt not found in dist directory"
+  exit 1
+fi
 
-# Clone and update formula
+# Function to extract SHA for a specific platform
+get_sha() {
+  local platform=$1
+  local sha=$(grep "${platform}.tar.gz" dist/checksums.txt | awk '{print $1}')
+  if [ -z "$sha" ]; then
+    echo "Error: Could not find SHA for ${platform}" >&2
+    exit 1
+  fi
+  echo "$sha"
+}
+
+# Get all checksums
+DARWIN_ARM64_SHA=$(get_sha "darwin_arm64")
+DARWIN_AMD64_SHA=$(get_sha "darwin_amd64")
+LINUX_ARM64_SHA=$(get_sha "linux_arm64")
+LINUX_AMD64_SHA=$(get_sha "linux_amd64")
+
+# Clone repository
+echo "Cloning homebrew-seed repository..."
 git clone https://x-access-token:${GITHUB_TOKEN}@github.com/jpwallace22/homebrew-seed.git
 cd homebrew-seed
 
-# Update version
-sed -i.bak "s/version \".*\"/version \"${VERSION}\"/" Formula/seed.rb
+# Create temporary file
+TMP_FILE=$(mktemp)
+FORMULA_FILE="Formula/seed.rb"
 
-# Update all checksums
-sed -i.bak "s/sha256 \".*\".*darwin_arm64/sha256 \"${DARWIN_ARM64_SHA}\"/" Formula/seed.rb
-sed -i.bak "s/sha256 \".*\".*darwin_amd64/sha256 \"${DARWIN_AMD64_SHA}\"/" Formula/seed.rb
-sed -i.bak "s/sha256 \".*\".*linux_arm64/sha256 \"${LINUX_ARM64_SHA}\"/" Formula/seed.rb
-sed -i.bak "s/sha256 \".*\".*linux_amd64/sha256 \"${LINUX_AMD64_SHA}\"/" Formula/seed.rb
+# Read the formula file line by line and make replacements
+while IFS= read -r line; do
+  # Update version
+  if [[ $line =~ ^[[:space:]]*version[[:space:]] ]]; then
+    echo "  version \"${VERSION}\"" >>"$TMP_FILE"
+  # Update SHA for darwin_arm64
+  elif [[ $line =~ .*darwin_arm64.*sha256.* ]]; then
+    echo "      sha256 \"${DARWIN_ARM64_SHA}\"" >>"$TMP_FILE"
+  # Update SHA for darwin_amd64
+  elif [[ $line =~ .*darwin_amd64.*sha256.* ]]; then
+    echo "      sha256 \"${DARWIN_AMD64_SHA}\"" >>"$TMP_FILE"
+  # Update SHA for linux_arm64
+  elif [[ $line =~ .*linux_arm64.*sha256.* ]]; then
+    echo "      sha256 \"${LINUX_ARM64_SHA}\"" >>"$TMP_FILE"
+  # Update SHA for linux_amd64
+  elif [[ $line =~ .*linux_amd64.*sha256.* ]]; then
+    echo "      sha256 \"${LINUX_AMD64_SHA}\"" >>"$TMP_FILE"
+  else
+    echo "$line" >>"$TMP_FILE"
+  fi
+done <"$FORMULA_FILE"
 
-rm Formula/seed.rb.bak
+# Replace original file with updated content
+mv "$TMP_FILE" "$FORMULA_FILE"
 
-# Verify and commit
+# Verify the changes
+echo "Verifying changes..."
+if ! grep -q "version \"${VERSION}\"" "$FORMULA_FILE"; then
+  echo "Error: Version update failed"
+  exit 1
+fi
+
+if ! grep -q "$DARWIN_ARM64_SHA" "$FORMULA_FILE"; then
+  echo "Error: Darwin ARM64 SHA update failed"
+  exit 1
+fi
+
+# Configure git
 git config user.name 'GitHub Action'
 git config user.email 'action@github.com'
-git add Formula/seed.rb
+
+# Commit and push changes
+git add "$FORMULA_FILE"
 git commit -m "Update formula for version ${VERSION}"
 git push
+
+echo "Successfully updated formula to version ${VERSION}"
