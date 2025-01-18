@@ -1,93 +1,65 @@
 #!/usr/bin/env bash
 
-# Exit on any error
 set -euo pipefail
 
-# Check if version argument is provided
+log() {
+  echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
+}
+
 if [ $# -ne 1 ]; then
+  log "Error: Version argument required"
   echo "Usage: $0 <version>"
   exit 1
 fi
 
-# Remove 'v' prefix if present
 VERSION=${1#v}
+log "Processing version: ${VERSION}"
 
-# Check for checksums file
-if [ ! -f dist/checksums.txt ]; then
-  echo "Error: checksums.txt not found in dist directory"
-  exit 1
-fi
-
-# Function to extract SHA for a specific platform
-get_sha() {
+get_checksum() {
   local platform=$1
-  local sha=$(grep "${platform}.tar.gz" dist/checksums.txt | awk '{print $1}')
-  if [ -z "$sha" ]; then
-    echo "Error: Could not find SHA for ${platform}" >&2
-    exit 1
-  fi
-  echo "$sha"
+  local checksum
+  checksum=$(grep "seed_${VERSION}_${platform}.tar.gz" dist/checksums.txt | head -n1 | awk '{print $1}')
+  echo "$checksum"
 }
 
-# Get all checksums
-DARWIN_ARM64_SHA=$(get_sha "darwin_arm64")
-DARWIN_AMD64_SHA=$(get_sha "darwin_amd64")
-LINUX_ARM64_SHA=$(get_sha "linux_arm64")
-LINUX_AMD64_SHA=$(get_sha "linux_amd64")
+# Get checksums with proper escaping
+DARWIN_ARM64=$(get_checksum "darwin_arm64" | sed 's/[\/&]/\\&/g')
+DARWIN_AMD64=$(get_checksum "darwin_amd64" | sed 's/[\/&]/\\&/g')
+LINUX_ARM64=$(get_checksum "linux_arm64" | sed 's/[\/&]/\\&/g')
+LINUX_AMD64=$(get_checksum "linux_amd64" | sed 's/[\/&]/\\&/g')
 
 # Clone repository
-echo "Cloning homebrew-seed repository..."
+log "Cloning homebrew-seed repository..."
 git clone https://x-access-token:${GITHUB_TOKEN}@github.com/jpwallace22/homebrew-seed.git
 cd homebrew-seed
 
-# Create temporary file
-TMP_FILE=$(mktemp)
-FORMULA_FILE="Formula/seed.rb"
+log "Updating formula..."
 
-# Read the formula file line by line and make replacements
-while IFS= read -r line; do
-  # Update version
-  if [[ $line =~ ^[[:space:]]*version[[:space:]] ]]; then
-    echo "  version \"${VERSION}\"" >>"$TMP_FILE"
-  # Update SHA for darwin_arm64
-  elif [[ $line =~ .*darwin_arm64.*sha256.* ]]; then
-    echo "      sha256 \"${DARWIN_ARM64_SHA}\"" >>"$TMP_FILE"
-  # Update SHA for darwin_amd64
-  elif [[ $line =~ .*darwin_amd64.*sha256.* ]]; then
-    echo "      sha256 \"${DARWIN_AMD64_SHA}\"" >>"$TMP_FILE"
-  # Update SHA for linux_arm64
-  elif [[ $line =~ .*linux_arm64.*sha256.* ]]; then
-    echo "      sha256 \"${LINUX_ARM64_SHA}\"" >>"$TMP_FILE"
-  # Update SHA for linux_amd64
-  elif [[ $line =~ .*linux_amd64.*sha256.* ]]; then
-    echo "      sha256 \"${LINUX_AMD64_SHA}\"" >>"$TMP_FILE"
-  else
-    echo "$line" >>"$TMP_FILE"
-  fi
-done <"$FORMULA_FILE"
+# Update each SHA separately to avoid issues with escaping
+sed -i.bak "s/version \".*\"/version \"${VERSION}\"/" Formula/seed.rb
+sed -i.bak "/# darwin_arm64/ s/sha256 \"[^\"]*\"/sha256 \"${DARWIN_ARM64}\"/" Formula/seed.rb
+sed -i.bak "/# darwin_amd64/ s/sha256 \"[^\"]*\"/sha256 \"${DARWIN_AMD64}\"/" Formula/seed.rb
+sed -i.bak "/# linux_arm64/ s/sha256 \"[^\"]*\"/sha256 \"${LINUX_ARM64}\"/" Formula/seed.rb
+sed -i.bak "/# linux_amd64/ s/sha256 \"[^\"]*\"/sha256 \"${LINUX_AMD64}\"/" Formula/seed.rb
 
-# Replace original file with updated content
-mv "$TMP_FILE" "$FORMULA_FILE"
+rm Formula/seed.rb.bak
 
 # Verify the changes
-echo "Verifying changes..."
-if ! grep -q "version \"${VERSION}\"" "$FORMULA_FILE"; then
-  echo "Error: Version update failed"
+log "Verifying changes..."
+if ! grep -q "# darwin_arm64" Formula/seed.rb ||
+  ! grep -q "# darwin_amd64" Formula/seed.rb ||
+  ! grep -q "# linux_arm64" Formula/seed.rb ||
+  ! grep -q "# linux_amd64" Formula/seed.rb; then
+  log "Error: Platform comments were removed"
   exit 1
 fi
 
-if ! grep -q "$DARWIN_ARM64_SHA" "$FORMULA_FILE"; then
-  echo "Error: Darwin ARM64 SHA update failed"
-  exit 1
-fi
-
-# Configure git
-git config user.name 'GitHub Action'
-git config user.email 'action@github.com'
-
-# Commit and push changes
-git add "$FORMULA_FILE"
-git commit -m "Update formula for version ${VERSION}"
+# Configure git and commit
+log "Committing changes..."
+git config user.name "GitHub Action"
+git config user.email "action@github.com"
+git add Formula/seed.rb
+git commit -m "Update formula to version ${VERSION}"
 git push
 
-echo "Successfully updated formula to version ${VERSION}"
+log "Successfully updated Homebrew formula to version ${VERSION}"
