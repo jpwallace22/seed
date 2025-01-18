@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jpwallace22/seed/cmd/flags"
 	"github.com/jpwallace22/seed/internal/ctx"
 	"github.com/jpwallace22/seed/internal/parser"
 	"github.com/spf13/cobra"
@@ -15,46 +16,13 @@ const (
 	msgSuccess = "Your directory tree has grown successfully!"
 )
 
-type Format string
-
-const (
-	Tree Format = "tree"
-	JSON Format = "json"
-	YAML Format = "yaml"
-)
-
-func (f Format) String() string {
-	return string(f)
-}
-
-func (f *Format) Set(value string) error {
-	switch Format(value) {
-	case Tree, JSON, YAML:
-		*f = Format(value)
-		return nil
-	default:
-		return fmt.Errorf("invalid format %q, must be one of: tree, json, yaml", value)
-	}
-}
-
-func (f Format) Type() string {
-	return "format"
-}
-
-type RootFlags struct {
-	FilePath      string
-	Format        Format
-	FromClipboard bool
-}
-
 type RootRunner struct {
 	clipboard clipboard.Clipboard
 	parser    parser.Parser
 	ctx       ctx.SeedContext
 }
 
-func NewRootRunner(cobra *cobra.Command, silent bool) Runner[RootFlags] {
-	ctx := ctx.Build(cobra, silent)
+func NewRootRunner(cobra *cobra.Command, ctx *ctx.SeedContext) Runner[flags.RootFlags] {
 	return &RootRunner{
 		ctx:       *ctx,
 		clipboard: clipboard.New(),
@@ -62,8 +30,9 @@ func NewRootRunner(cobra *cobra.Command, silent bool) Runner[RootFlags] {
 	}
 }
 
-func (r *RootRunner) Run(flags RootFlags, args []string) error {
+func (r *RootRunner) Run(args []string) error {
 	logger := r.ctx.Logger
+	flags := r.ctx.Flags.Root
 
 	switch {
 	case flags.FromClipboard:

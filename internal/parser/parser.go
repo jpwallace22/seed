@@ -21,6 +21,7 @@ type TreeNode struct {
 
 // func NewParser(ctx ctx.SeedContext) Parser {
 
+// This should move to a new module for filesystems, its breaking single job pattern
 func createFileSystem(node *TreeNode, parentPath string, logger logger.Logger) error {
 	if node == nil {
 		return nil

@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/jpwallace22/seed/cmd/flags"
 	"github.com/jpwallace22/seed/internal/ctx"
 	mocklogger "github.com/jpwallace22/seed/pkg/logger/mock"
 	"github.com/spf13/cobra"
@@ -39,7 +40,7 @@ func (m *MockParser) ParseTree(tree string) error {
 	return args.Error(0)
 }
 
-func buildTestRunner(silent bool) (*RootRunner, *MockClipboard, *MockParser) {
+func buildTestRunner(testFlags flags.RootFlags) (*RootRunner, *MockClipboard, *MockParser) {
 	mockLogger := mocklogger.New()
 	mockClipboard := new(MockClipboard)
 	mockParser := new(MockParser)
@@ -49,10 +50,10 @@ func buildTestRunner(silent bool) (*RootRunner, *MockClipboard, *MockParser) {
 
 	testCtx := &ctx.SeedContext{
 		Logger: mockLogger,
-		Config: ctx.Config{
-			Silent: silent,
+		Cobra:  mockCmd,
+		Flags: flags.Flags{
+			Root: testFlags,
 		},
-		Cobra: mockCmd,
 	}
 
 	runner := &RootRunner{
@@ -67,49 +68,19 @@ func buildTestRunner(silent bool) (*RootRunner, *MockClipboard, *MockParser) {
 /* ******************************************
 *               Tests
 *********************************************/
-func TestNewRunner(t *testing.T) {
-	tests := []struct {
-		name   string
-		flags  RootFlags
-		config Config
-	}{
-		{
-			name:   "creates runner with all flags disabled",
-			flags:  RootFlags{},
-			config: Config{},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cmd := &cobra.Command{
-				Use: "test",
-			}
-			runner := NewRootRunner(cmd, tt.config.Silent)
-			rootRunner, ok := runner.(*RootRunner)
-
-			assert.True(t, ok)
-			assert.NotNil(t, runner)
-			assert.NotNil(t, rootRunner.ctx)
-			assert.NotNil(t, rootRunner.clipboard)
-			assert.Equal(t, tt.config.Silent, rootRunner.ctx.Config.Silent)
-		})
-	}
-}
-
 func TestClipboardOperations(t *testing.T) {
 	tests := []struct {
 		clipError     error
 		name          string
 		clipContent   string
 		errorContains string
-		flags         RootFlags
+		flags         flags.RootFlags
 		args          []string
 		expectError   bool
 	}{
 		{
 			name: "successful clipboard parse",
-			flags: RootFlags{
+			flags: flags.RootFlags{
 				FromClipboard: true,
 			},
 			clipContent: "test-content",
@@ -117,7 +88,7 @@ func TestClipboardOperations(t *testing.T) {
 		},
 		{
 			name: "clipboard read error",
-			flags: RootFlags{
+			flags: flags.RootFlags{
 				FromClipboard: true,
 			},
 			clipError:     errors.New("clipboard error"),
@@ -128,14 +99,14 @@ func TestClipboardOperations(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			runner, mockClipboard, mockParser := buildTestRunner(true)
+			runner, mockClipboard, mockParser := buildTestRunner(tt.flags)
 
 			mockClipboard.On("PasteText").Return(tt.clipContent, tt.clipError)
 			if !tt.expectError {
 				mockParser.On("ParseTree", tt.clipContent).Return(nil)
 			}
 
-			err := runner.Run(tt.flags, tt.args)
+			err := runner.Run(tt.args)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -158,13 +129,13 @@ func TestFileOperations(t *testing.T) {
 		filePath      string
 		fileContent   string
 		errorContains string
-		flags         RootFlags
+		flags         flags.RootFlags
 		args          []string
 		expectError   bool
 	}{
 		{
 			name: "successful file parse",
-			flags: RootFlags{
+			flags: flags.RootFlags{
 				FilePath: "test.txt",
 			},
 			fileContent: "test content",
@@ -172,7 +143,7 @@ func TestFileOperations(t *testing.T) {
 		},
 		{
 			name: "file not found",
-			flags: RootFlags{
+			flags: flags.RootFlags{
 				FilePath: "nonexistent.txt",
 			},
 			expectError:   true,
@@ -180,7 +151,7 @@ func TestFileOperations(t *testing.T) {
 		},
 		{
 			name: "empty file",
-			flags: RootFlags{
+			flags: flags.RootFlags{
 				FilePath: "empty.txt",
 			},
 			expectError:   true,
@@ -190,7 +161,7 @@ func TestFileOperations(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			runner, _, mockParser := buildTestRunner(true)
+			runner, _, mockParser := buildTestRunner(tt.flags)
 
 			if !tt.expectError && tt.fileContent != "" {
 				err := os.WriteFile(tt.flags.FilePath, []byte(tt.fileContent), 0644)
@@ -199,7 +170,7 @@ func TestFileOperations(t *testing.T) {
 				mockParser.On("ParseTree", tt.fileContent).Return(nil)
 			}
 
-			err := runner.Run(tt.flags, tt.args)
+			err := runner.Run(tt.args)
 
 			if tt.expectError {
 				assert.Error(t, err)
