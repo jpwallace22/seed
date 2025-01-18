@@ -2,9 +2,31 @@
 
 Seed is a CLI tool that helps you quickly create directory structures from a tree representation. Whether you have a tree structure in your clipboard or a file, Seed can instantly "grow" it into a real directory structure.
 
+<!--toc:start-->
+- [Seed 🌱](#seed-🌱)
+  - [Installation](#installation)
+    - [Golang](#golang)
+    - [Homebrew](#homebrew)
+    - [Download Binary](#download-binary)
+  - [Usage](#usage)
+    - [From Clipboard](#from-clipboard)
+    - [From String](#from-string)
+    - [From File](#from-file)
+  - [Input Format](#input-format)
+    - [Using ASCII characters](#using-ascii-characters)
+    - [Using spaces](#using-spaces)
+    - [Using JSON](#using-json)
+  - [Features](#features)
+  - [Contributing](#contributing)
+  - [Todo](#todo)
+  - [License](#license)
+  - [Author](#author)
+  - [Acknowledgments](#acknowledgments)
+<!--toc:end-->
+
 ## Installation
 
-Curently supported is golang, homebrew, and good ol' downloading the binary yourself. More support to come. 
+Currently supported is golang, homebrew, and good ol' downloading the binary yourself. More support to come. 
 
 ### Golang
 
@@ -236,7 +258,13 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 ## Todo
 
 - ~~Implement ability to parse from file path~~
-- Add JSON and YAML support 
+- ~~Add JSON support ~~
+- Increase package manager distribution 
+  - apt
+  - pacman
+  - choco
+  - yum
+- Add YAML support 
 - Support StdIn
 - flag to adjust spacing between 2 and 4 for people who write their own trees with just spaces
 
