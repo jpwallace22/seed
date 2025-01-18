@@ -11,11 +11,15 @@ type RootFlags struct {
 
 type Format string
 
-const (
-	Tree Format = "tree"
-	JSON Format = "json"
-	YAML Format = "yaml"
-)
+var Formats = struct {
+	Tree Format
+	JSON Format
+	YAML Format
+}{
+	Tree: "tree",
+	JSON: "json",
+	YAML: "yaml",
+}
 
 func (f Format) String() string {
 	return string(f)
@@ -23,7 +27,7 @@ func (f Format) String() string {
 
 func (f *Format) Set(value string) error {
 	switch Format(value) {
-	case Tree, JSON, YAML:
+	case Formats.Tree, Formats.JSON, Formats.YAML:
 		*f = Format(value)
 		return nil
 	default:

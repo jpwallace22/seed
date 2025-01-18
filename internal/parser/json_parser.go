@@ -27,35 +27,6 @@ func NewJSONParser(ctx ctx.SeedContext) Parser {
 	return &jsonParser{ctx: ctx}
 }
 
-func (p *jsonParser) validateNode(raw json.RawMessage) error {
-	var node struct {
-		Type     string            `json:"type"`
-		Name     string            `json:"name"`
-		Contents []json.RawMessage `json:"contents,omitempty"`
-	}
-
-	if err := json.Unmarshal(raw, &node); err != nil {
-		return fmt.Errorf("invalid node: %w", err)
-	}
-
-	if node.Type == "" {
-		return fmt.Errorf("missing type field")
-	}
-
-	if node.Name == "" {
-		return fmt.Errorf("missing name field")
-	}
-
-	// Recursively validate contents
-	for _, content := range node.Contents {
-		if err := p.validateNode(content); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (p *jsonParser) ParseTree(jsonStr string) error {
 	if jsonStr == "" {
 		return fmt.Errorf("no tree provided")
@@ -100,6 +71,35 @@ func (p *jsonParser) ParseTree(jsonStr string) error {
 		if dirs != report.Directories || files != report.Files {
 			return fmt.Errorf("file system count mismatch - expected: %d directories and %d files, got: %d directories and %d files",
 				report.Directories, report.Files, dirs, files)
+		}
+	}
+
+	return nil
+}
+
+func (p *jsonParser) validateNode(raw json.RawMessage) error {
+	var node struct {
+		Type     string            `json:"type"`
+		Name     string            `json:"name"`
+		Contents []json.RawMessage `json:"contents,omitempty"`
+	}
+
+	if err := json.Unmarshal(raw, &node); err != nil {
+		return fmt.Errorf("invalid node: %w", err)
+	}
+
+	if node.Type == "" {
+		return fmt.Errorf("missing type field")
+	}
+
+	if node.Name == "" {
+		return fmt.Errorf("missing name field")
+	}
+
+	// Recursively validate contents
+	for _, content := range node.Contents {
+		if err := p.validateNode(content); err != nil {
+			return err
 		}
 	}
 

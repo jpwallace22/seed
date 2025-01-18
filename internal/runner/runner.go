@@ -1,6 +1,6 @@
 package runner
 
-type Runner[T any] interface {
+type Runner interface {
 	Run(args []string) error
 }
 

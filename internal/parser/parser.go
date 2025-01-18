@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jpwallace22/seed/cmd/flags"
+	"github.com/jpwallace22/seed/internal/ctx"
 	"github.com/jpwallace22/seed/pkg/logger"
 )
 
@@ -19,7 +21,39 @@ type TreeNode struct {
 	depth    int
 }
 
-// func NewParser(ctx ctx.SeedContext) Parser {
+type Option func(*config)
+
+type config struct {
+	format flags.Format
+}
+
+func NewParser(ctx *ctx.SeedContext, opts ...Option) (Parser, error) {
+	if ctx == nil {
+		return nil, fmt.Errorf("context is required")
+	}
+
+	cfg := &config{
+		format: flags.Formats.Tree,
+	}
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
+	switch cfg.format {
+	case flags.Formats.JSON:
+		return NewJSONParser(*ctx), nil
+	case flags.Formats.Tree:
+		return NewTreeParser(*ctx), nil
+	default:
+		return nil, fmt.Errorf("unsupported parser format: %s", cfg.format)
+	}
+}
+
+func WithFormat(format flags.Format) Option {
+	return func(c *config) {
+		c.format = format
+	}
+}
 
 // This should move to a new module for filesystems, its breaking single job pattern
 func createFileSystem(node *TreeNode, parentPath string, logger logger.Logger) error {

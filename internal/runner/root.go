@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/jpwallace22/seed/cmd/flags"
 	"github.com/jpwallace22/seed/internal/ctx"
 	"github.com/jpwallace22/seed/internal/parser"
 	"github.com/spf13/cobra"
@@ -22,11 +21,12 @@ type RootRunner struct {
 	ctx       ctx.SeedContext
 }
 
-func NewRootRunner(cobra *cobra.Command, ctx *ctx.SeedContext) Runner[flags.RootFlags] {
+func NewRootRunner(cobra *cobra.Command, ctx *ctx.SeedContext) Runner {
+	parser, _ := parser.NewParser(ctx, parser.WithFormat(ctx.Flags.Root.Format))
 	return &RootRunner{
 		ctx:       *ctx,
 		clipboard: clipboard.New(),
-		parser:    parser.NewTreeParser(*ctx),
+		parser:    parser,
 	}
 }
 
