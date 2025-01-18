@@ -2,36 +2,23 @@ package parser
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/jpwallace22/seed/internal/ctx"
 )
 
-type Parser interface {
-	ParseTreeString(string) error
-}
-
-type parser struct {
+type stringParser struct {
 	ctx ctx.SeedContext
 }
 
-type TreeNode struct {
-	name     string
-	children []*TreeNode
-	isFile   bool
-	depth    int
-}
-
-func New(ctx ctx.SeedContext) Parser {
-	return &parser{
+func NewTreeParser(ctx ctx.SeedContext) Parser {
+	return &stringParser{
 		ctx: ctx,
 	}
 }
 
 // converts a text representation of a directory tree into actual directories and files
-func (p *parser) ParseTreeString(tree string) error {
+func (p *stringParser) ParseTree(tree string) error {
 	lines := strings.Split(strings.TrimSpace(tree), "\n")
 	if len(lines) == 0 {
 		return fmt.Errorf("no tree provided")
@@ -46,7 +33,7 @@ func (p *parser) ParseTreeString(tree string) error {
 		return fmt.Errorf("failed to parse tree: %w", err)
 	}
 
-	err = p.createFileSystem(root, "")
+	err = createFileSystem(root, "", p.ctx.Logger)
 	if err != nil {
 		return err
 	}
@@ -55,7 +42,7 @@ func (p *parser) ParseTreeString(tree string) error {
 }
 
 // converts the string lines into a tree structure
-func (p *parser) buildTree(lines []string) (*TreeNode, error) {
+func (p *stringParser) buildTree(lines []string) (*TreeNode, error) {
 	if len(lines) == 0 {
 		return nil, fmt.Errorf("no lines to parse")
 	}
@@ -112,7 +99,7 @@ func (p *parser) buildTree(lines []string) (*TreeNode, error) {
 	return root, nil
 }
 
-func (p *parser) getDepth(line string) int {
+func (p *stringParser) getDepth(line string) int {
 	depth := 0
 	for i := 0; i < len(line); {
 		if strings.HasPrefix(line[i:], "│   ") {
@@ -134,7 +121,7 @@ func (p *parser) getDepth(line string) int {
 	return depth
 }
 
-func (p *parser) extractName(line string) string {
+func (p *stringParser) extractName(line string) string {
 	line = strings.TrimSpace(line)
 	unwantedChars := []string{
 		"├── ", "└── ", "/", "\\",
@@ -145,51 +132,4 @@ func (p *parser) extractName(line string) string {
 		line = strings.ReplaceAll(line, char, "")
 	}
 	return strings.TrimSpace(line)
-}
-
-func (p *parser) createFileSystem(node *TreeNode, parentPath string) error {
-	if node == nil {
-		return nil
-	}
-	logger := p.ctx.Logger
-	permissions := os.FileMode(0755)
-
-	currentPath := parentPath
-	if node.name != "." {
-		currentPath = filepath.Join(parentPath, node.name)
-	}
-
-	// create current node unless it's the "." root
-	if node.name != "." {
-		if node.isFile {
-			// ensure parent directory exists
-			parentDir := filepath.Dir(currentPath)
-			if err := os.MkdirAll(parentDir, permissions); err != nil {
-				return fmt.Errorf("failed to create directory %s: %w", parentDir, err)
-			}
-
-			// create file
-			f, err := os.Create(currentPath)
-			if err != nil {
-				return fmt.Errorf("failed to create file %s: %w", currentPath, err)
-			}
-
-			f.Close()
-			logger.Info("Planted file: " + currentPath)
-		} else {
-			if err := os.MkdirAll(currentPath, permissions); err != nil {
-				return fmt.Errorf("failed to create directory %s: %w", currentPath, err)
-			}
-			logger.Info("Planted directory: " + currentPath)
-		}
-	}
-
-	// loop through children with the correct parent path
-	for _, child := range node.children {
-		if err := p.createFileSystem(child, currentPath); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }

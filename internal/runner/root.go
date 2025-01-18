@@ -58,7 +58,7 @@ func NewRootRunner(cobra *cobra.Command, silent bool) Runner[RootFlags] {
 	return &RootRunner{
 		ctx:       *ctx,
 		clipboard: clipboard.New(),
-		parser:    parser.New(*ctx),
+		parser:    parser.NewTreeParser(*ctx),
 	}
 }
 
@@ -82,7 +82,7 @@ func (r *RootRunner) Run(flags RootFlags, args []string) error {
 
 	case len(args) > 0:
 		logger.Log("Sprouting directories from seed: %s", args[0])
-		if err := r.parser.ParseTreeString(args[0]); err != nil {
+		if err := r.parser.ParseTree(args[0]); err != nil {
 			return fmt.Errorf("unable to parse the tree structure: %w", err)
 		}
 		logger.Success(msgSuccess)
@@ -99,7 +99,7 @@ func (r *RootRunner) parseFromFile(path string) error {
 	}
 
 	r.ctx.Logger.Log("Sowing the seeds of " + filepath.Base(path) + "...")
-	if err := r.parser.ParseTreeString(string(data)); err != nil {
+	if err := r.parser.ParseTree(string(data)); err != nil {
 		return fmt.Errorf("unable to parse the tree structure: %w", err)
 	}
 	return nil
@@ -113,7 +113,7 @@ func (r *RootRunner) parseFromClipboard() error {
 
 	r.ctx.Logger.Log("Planting from clipboard...")
 
-	if err := r.parser.ParseTreeString(text); err != nil {
+	if err := r.parser.ParseTree(text); err != nil {
 		return fmt.Errorf("unable to parse the tree structure: %w", err)
 	}
 	return nil

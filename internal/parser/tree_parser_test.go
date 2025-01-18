@@ -33,7 +33,7 @@ func (s *ParserTestSuite) SetupTest() {
 	testCtx := ctx.SeedContext{
 		Logger: s.logger,
 	}
-	s.parser = New(testCtx)
+	s.parser = NewTreeParser(testCtx)
 }
 
 func (s *ParserTestSuite) TearDownTestSuite() {
@@ -42,7 +42,7 @@ func (s *ParserTestSuite) TearDownTestSuite() {
 
 func (s *ParserTestSuite) TestEmptyInput() {
 	s.Run("empty input should error", func() {
-		err := s.parser.ParseTreeString("")
+		err := s.parser.ParseTree("")
 		s.Error(err, "Expected error for empty input")
 	})
 }
@@ -60,7 +60,7 @@ root
 	expectedDirs := []string{"root"}
 
 	s.Run("create tree with prefix", func() {
-		s.Require().NoError(s.parser.ParseTreeString(input))
+		s.Require().NoError(s.parser.ParseTree(input))
 		s.verifyStructure(expectedFiles, expectedDirs)
 	})
 }
@@ -75,7 +75,7 @@ func (s *ParserTestSuite) TestSimpleStructure() {
 	expectedDirs := []string{"root", "root/dir1", "root/dir2"}
 
 	s.Run("create directory structure", func() {
-		s.Require().NoError(s.parser.ParseTreeString(input))
+		s.Require().NoError(s.parser.ParseTree(input))
 		s.verifyStructure(expectedFiles, expectedDirs)
 	})
 }
@@ -90,7 +90,7 @@ func (s *ParserTestSuite) TestStripsTrailingSlashes() {
 	expectedDirs := []string{"root", "root/dir1", "root/dir2"}
 
 	s.Run("create directory structure", func() {
-		s.Require().NoError(s.parser.ParseTreeString(input))
+		s.Require().NoError(s.parser.ParseTree(input))
 		s.verifyStructure(expectedFiles, expectedDirs)
 	})
 }
@@ -121,7 +121,7 @@ func (s *ParserTestSuite) TestComplexStructure() {
 	}
 
 	s.Run("create nested directory structure", func() {
-		s.Require().NoError(s.parser.ParseTreeString(input))
+		s.Require().NoError(s.parser.ParseTree(input))
 		s.verifyStructure(expectedFiles, expectedDirs)
 	})
 }
@@ -153,7 +153,7 @@ func (s *ParserTestSuite) TestDotRoot() {
 	}
 
 	s.Run("create structure with dot root", func() {
-		s.Require().NoError(s.parser.ParseTreeString(input))
+		s.Require().NoError(s.parser.ParseTree(input))
 		s.verifyStructure(expectedFiles, expectedDirs)
 
 		// Additional checks for correct nesting
@@ -186,7 +186,7 @@ func (s *ParserTestSuite) TestRealWorldExample() {
 	}
 
 	s.Run("create real world structure", func() {
-		s.Require().NoError(s.parser.ParseTreeString(input))
+		s.Require().NoError(s.parser.ParseTree(input))
 		s.verifyStructure(expectedFiles, expectedDirs)
 	})
 }
@@ -217,7 +217,7 @@ func (s *ParserTestSuite) TestDeepNesting() {
 	}
 
 	s.Run("create deeply nested structure", func() {
-		s.Require().NoError(s.parser.ParseTreeString(input))
+		s.Require().NoError(s.parser.ParseTree(input))
 		s.verifyStructure(expectedFiles, expectedDirs)
 
 		// Verify specific deep nesting
@@ -255,7 +255,7 @@ func (s *ParserTestSuite) TestMultipleSiblings() {
 	}
 
 	s.Run("create structure with multiple siblings", func() {
-		s.Require().NoError(s.parser.ParseTreeString(input))
+		s.Require().NoError(s.parser.ParseTree(input))
 		s.verifyStructure(expectedFiles, expectedDirs)
 
 		// Verify sibling files are in correct directories

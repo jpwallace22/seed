@@ -34,7 +34,7 @@ type MockParser struct {
 	mock.Mock
 }
 
-func (m *MockParser) ParseTreeString(tree string) error {
+func (m *MockParser) ParseTree(tree string) error {
 	args := m.Called(tree)
 	return args.Error(0)
 }
@@ -49,7 +49,7 @@ func buildTestRunner(silent bool) (*RootRunner, *MockClipboard, *MockParser) {
 
 	testCtx := &ctx.SeedContext{
 		Logger: mockLogger,
-		GlobalFlags: ctx.GlobalFlags{
+		Config: ctx.Config{
 			Silent: silent,
 		},
 		Cobra: mockCmd,
@@ -92,7 +92,7 @@ func TestNewRunner(t *testing.T) {
 			assert.NotNil(t, runner)
 			assert.NotNil(t, rootRunner.ctx)
 			assert.NotNil(t, rootRunner.clipboard)
-			assert.Equal(t, tt.config.Silent, rootRunner.ctx.GlobalFlags.Silent)
+			assert.Equal(t, tt.config.Silent, rootRunner.ctx.Config.Silent)
 		})
 	}
 }
@@ -132,7 +132,7 @@ func TestClipboardOperations(t *testing.T) {
 
 			mockClipboard.On("PasteText").Return(tt.clipContent, tt.clipError)
 			if !tt.expectError {
-				mockParser.On("ParseTreeString", tt.clipContent).Return(nil)
+				mockParser.On("ParseTree", tt.clipContent).Return(nil)
 			}
 
 			err := runner.Run(tt.flags, tt.args)
@@ -196,7 +196,7 @@ func TestFileOperations(t *testing.T) {
 				err := os.WriteFile(tt.flags.FilePath, []byte(tt.fileContent), 0644)
 				defer os.Remove(tt.flags.FilePath)
 				assert.NoError(t, err)
-				mockParser.On("ParseTreeString", tt.fileContent).Return(nil)
+				mockParser.On("ParseTree", tt.fileContent).Return(nil)
 			}
 
 			err := runner.Run(tt.flags, tt.args)

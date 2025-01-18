@@ -20,11 +20,11 @@ func init() {
 	// Flags
 	rootCmd.Flags().BoolVarP(&flags.FromClipboard, "clipboard", "c", false, "Use tree structure from clipboard.")
 	rootCmd.Flags().StringVarP(&flags.FilePath, "file", "f", "", "Use tree structure from a file.")
-	// rootCmd.Flags().VarP(&flags.Format, "format", "F", "Format of the input [tree, json, yamlj]") // TODO: implement different parsers
+	rootCmd.Flags().VarP(&flags.Format, "format", "F", "Format of the input [tree, json, yaml]")
 }
 
 var rootCmd = &cobra.Command{
-	Version: "0.1.1",
+	Version: "0.1.1", // unreleased
 	Use:     "seed [string]",
 	Short:   "Plant the seeds of your directory tree 🌱.",
 	Long:    "Seed is a CLI tool that helps you grow directory structures from a tree representation provided via string or clipboard.",

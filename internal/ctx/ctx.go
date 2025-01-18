@@ -7,21 +7,21 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type GlobalFlags struct {
+type Config struct {
 	Silent bool
 }
 
 type SeedContext struct {
-	Logger      logger.Logger
-	Cobra       *cobra.Command
-	GlobalFlags GlobalFlags
+	Logger logger.Logger
+	Cobra  *cobra.Command
+	Config Config
 }
 
 func Build(cobra *cobra.Command, silent bool) *SeedContext {
 	return &SeedContext{
 		Cobra:  cobra,
 		Logger: logger.NewLogger(os.Stdin, os.Stderr, silent),
-		GlobalFlags: GlobalFlags{
+		Config: Config{
 			Silent: silent,
 		},
 	}
