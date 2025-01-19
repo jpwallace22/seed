@@ -45,11 +45,22 @@ build\:all:
 .PHONY: benchmark
 benchmark: build
 	@echo "Running Benchmarks..."
+	go test ./benchmark -bench=. \
+		-benchmem \
+		-count=3 \# maybe switch this to 4
+		-benchtime=2s \
+		-cpu=1,4 \
+		-timeout=30m \
+		| tee ./benchmark/benchmark_results.txt
+	@$(call success,"Standard benchmarks complete.")
+
+benchmark\:new: build
+	@echo "Running Benchmarks..."
 	@bash ./tools/scripts/archive-benchmark.sh
 	@$(call success,"Archived old benchmarks.")
 	go test ./benchmark -bench=. \
 		-benchmem \
-		-count=3 \
+		-count=3 \# maybe switch this to 4
 		-benchtime=2s \
 		-cpu=1,4 \
 		-timeout=30m \

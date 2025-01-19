@@ -23,6 +23,7 @@ type jsonParser struct {
 	ctx *ctx.SeedContext
 }
 
+// TODO: use node pool to reduce memory usage
 func NewJSONParser(ctx *ctx.SeedContext) Parser {
 	return &jsonParser{ctx: ctx}
 }

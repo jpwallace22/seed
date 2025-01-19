@@ -24,28 +24,6 @@ Benchmarks were conducted using Go's built-in testing framework with the followi
   - Memory allocation (B/op)
   - Allocation count (allocs/op)
 
-## Key Findings
-
-### Performance Comparison
-
-#### Time performance
-
-| Nodes | ASCII (ms) | JSON (ms) | Difference |
-|-------|------------|-----------|------------|
-| 100   | 8.62      | 9.00      | +4.4%      |
-| 500   | 35.55     | 36.76     | +3.4%      |
-| 1000  | 64.48     | 66.23     | +2.7%      |
-| 5000  | 428.16    | 438.29    | +2.4%      |
-
-#### Memory Usage
-
-| Nodes | ASCII (KB) | JSON (KB) | Difference |
-|-------|------------|-----------|------------|
-| 100   | 13.89     | 13.95     | +0.4%      |
-| 500   | 17.09     | 17.14     | +0.3%      |
-| 1000  | 24.82     | 25.11     | +1.2%      |
-| 5000  | 235.83    | 235.89    | +0.03%     |
-
 ### Input Method Comparison (500 nodes)
 
 - **String Input**
