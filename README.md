@@ -256,7 +256,7 @@ seed --format json -f path/to/structure.json
 
 #### Time performance
 
-| nodes | ascii (ms) | json (ms) | difference |
+| Nodes | ASCII (ms) | JSON (ms) | Difference |
 |-------|------------|-----------|------------|
 | 100   | 8.62      | 9.00      | +4.4%      |
 | 500   | 35.55     | 36.76     | +3.4%      |
@@ -289,7 +289,8 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 ## Todo
 
 - ~~Implement ability to parse from file path~~
-- ~~Add JSON support ~~
+- ~~Add JSON support~~
+- ~~Benchmarks~~
 - Increase package manager distribution 
   - apt
   - pacman

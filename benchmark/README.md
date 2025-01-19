@@ -28,8 +28,9 @@ Benchmarks were conducted using Go's built-in testing framework with the followi
 
 ### Performance Comparison
 
-#### time performance
-| nodes | ascii (ms) | json (ms) | difference |
+#### Time performance
+
+| Nodes | ASCII (ms) | JSON (ms) | Difference |
 |-------|------------|-----------|------------|
 | 100   | 8.62      | 9.00      | +4.4%      |
 | 500   | 35.55     | 36.76     | +3.4%      |
@@ -37,6 +38,7 @@ Benchmarks were conducted using Go's built-in testing framework with the followi
 | 5000  | 428.16    | 438.29    | +2.4%      |
 
 #### Memory Usage
+
 | Nodes | ASCII (KB) | JSON (KB) | Difference |
 |-------|------------|-----------|------------|
 | 100   | 13.89     | 13.95     | +0.4%      |

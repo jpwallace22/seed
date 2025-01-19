@@ -45,6 +45,8 @@ build\:all:
 .PHONY: benchmark
 benchmark: build
 	@echo "Running Benchmarks..."
+	@bash ./tools/scripts/archive-benchmark.sh
+	@$(call success,"Archived old benchmarks.")
 	go test ./benchmark -bench=. \
 		-benchmem \
 		-count=3 \
@@ -53,6 +55,10 @@ benchmark: build
 		-timeout=30m \
 		| tee ./benchmark/benchmark_results.txt
 	@$(call success,"Standard benchmarks complete.")
+
+benchmark\:report: 
+	@bash ./tools/scripts/compare-benchmarks.sh
+
 
 benchmark\:full: build
 	@echo "Running Benchmarks..."

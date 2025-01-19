@@ -3,17 +3,36 @@ package parser
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/jpwallace22/seed/internal/ctx"
 )
 
+type treeNodePool struct {
+	node sync.Pool
+}
+
+func NewTreeNodePool() *treeNodePool {
+	return &treeNodePool{
+		node: sync.Pool{
+			New: func() interface{} {
+				return &TreeNode{
+					children: make([]*TreeNode, 0, 8), // Preallocate with common size
+				}
+			},
+		},
+	}
+}
+
 type stringParser struct {
-	ctx *ctx.SeedContext
+	ctx  *ctx.SeedContext
+	pool *treeNodePool
 }
 
 func NewTreeParser(ctx *ctx.SeedContext) Parser {
 	return &stringParser{
-		ctx: ctx,
+		ctx:  ctx,
+		pool: NewTreeNodePool(),
 	}
 }
 
@@ -47,20 +66,25 @@ func (p *stringParser) buildTree(lines []string) (*TreeNode, error) {
 		return nil, fmt.Errorf("no lines to parse")
 	}
 
+	// Preallocate lastNodes map with expected capacity
+	lastNodes := make(map[int]*TreeNode, len(lines)/4)
+
 	rootName := strings.TrimSpace(lines[0])
 	if rootName == "" {
 		return nil, fmt.Errorf("a root is required")
 	}
 
-	root := &TreeNode{
-		name:     rootName,
-		isFile:   strings.Contains(rootName, ".") && rootName != ".",
-		children: make([]*TreeNode, 0),
-		depth:    0,
-	}
+	replacer := strings.NewReplacer(
+		"├── ", "", "└── ", "", "│   ", "", "/", "", "\\", "", "    ", "",
+		"│", "", "└", "", "├", "", "─", "",
+	)
 
-	// Keep track of last nodes at each depth level
-	lastNodes := make(map[int]*TreeNode)
+	root := p.pool.node.Get().(*TreeNode)
+	root.name = rootName
+	root.isFile = strings.Contains(rootName, ".")
+	root.depth = 0
+	root.children = root.children[:0] // Reset slice but keep capacity
+
 	lastNodes[0] = root
 
 	for i := 1; i < len(lines); i++ {
@@ -73,22 +97,22 @@ func (p *stringParser) buildTree(lines []string) (*TreeNode, error) {
 
 		// Build the node
 		depth := p.getDepth(line)
-		name := p.extractName(line)
+		name := strings.TrimSpace(replacer.Replace(strings.TrimSpace(line)))
 		if name == "" {
 			continue
 		}
 
-		node := &TreeNode{
-			name:     name,
-			isFile:   strings.Contains(name, "."),
-			children: make([]*TreeNode, 0),
-			depth:    depth,
-		}
+		node := p.pool.node.Get().(*TreeNode)
+		node.name = name
+		node.isFile = strings.Contains(name, ".")
+		node.depth = depth
+		node.children = node.children[:0]
 
 		// Assign the node to a parent
 		parentDepth := depth - 1
 		parent := lastNodes[parentDepth]
 		if parent == nil {
+			p.cleanupTree(root)
 			return nil, fmt.Errorf("invalid tree structure: missing parent at depth %d for node %s", parentDepth, name)
 		}
 
@@ -101,35 +125,32 @@ func (p *stringParser) buildTree(lines []string) (*TreeNode, error) {
 
 func (p *stringParser) getDepth(line string) int {
 	depth := 0
-	for i := 0; i < len(line); {
-		if strings.HasPrefix(line[i:], "│   ") {
+	i := 0
+	for i < len(line) {
+		if strings.HasPrefix(line[i:], "│   ") ||
+			strings.HasPrefix(line[i:], "    ") {
 			depth++
 			i += 4
-		} else if strings.HasPrefix(line[i:], "    ") {
+		} else if strings.HasPrefix(line[i:], "├── ") ||
+			strings.HasPrefix(line[i:], "└── ") {
 			depth++
 			i += 4
-		} else if strings.HasPrefix(line[i:], "├── ") {
-			depth++
-			i += 4
-		} else if strings.HasPrefix(line[i:], "└── ") {
-			depth++
-			i += 4
+			break // These always appear at the end of the depth indicators and can break early
 		} else {
 			i++
 		}
 	}
+
 	return depth
 }
 
-func (p *stringParser) extractName(line string) string {
-	line = strings.TrimSpace(line)
-	unwantedChars := []string{
-		"├── ", "└── ", "/", "\\",
-		"│   ", "    ",
-		"│", "└", "├", "─",
+func (p *stringParser) cleanupTree(node *TreeNode) {
+	if node == nil {
+		return
 	}
-	for _, char := range unwantedChars {
-		line = strings.ReplaceAll(line, char, "")
+	for _, child := range node.children {
+		p.cleanupTree(child)
 	}
-	return strings.TrimSpace(line)
+	node.children = nil
+	p.pool.node.Put(node)
 }

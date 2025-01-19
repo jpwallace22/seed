@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/jpwallace22/seed/cmd/flags"
 	"github.com/jpwallace22/seed/internal/ctx"
@@ -60,28 +61,34 @@ func createFileSystem(node *TreeNode, parentPath string, logger logger.Logger) e
 	if node == nil {
 		return nil
 	}
-	permissions := os.FileMode(0755)
 
+	const permissions = os.FileMode(0755)
 	currentPath := parentPath
-	if node.name != "." {
-		currentPath = filepath.Join(parentPath, node.name)
-	}
 
-	// create current node unless it's the "." root
 	if node.name != "." {
+		// Use buffer pool for path joining to reduce allocations
+		var pathBuilder strings.Builder
+		pathBuilder.Grow(len(parentPath) + len(node.name) + 1)
+		pathBuilder.WriteString(parentPath)
+		if len(parentPath) > 0 {
+			pathBuilder.WriteByte(filepath.Separator)
+		}
+		pathBuilder.WriteString(node.name)
+		currentPath = pathBuilder.String()
+
 		if node.isFile {
-			// ensure parent directory exists
-			parentDir := filepath.Dir(currentPath)
-			if err := os.MkdirAll(parentDir, permissions); err != nil {
-				return fmt.Errorf("failed to create directory %s: %w", parentDir, err)
+			// Create parent directories only if needed
+			if parentDir := filepath.Dir(currentPath); parentDir != "." {
+				if err := os.MkdirAll(parentDir, permissions); err != nil {
+					return fmt.Errorf("failed to create directory %s: %w", parentDir, err)
+				}
 			}
 
-			// create file
-			f, err := os.Create(currentPath)
+			// Create file using O_CREATE|O_WRONLY for better performance
+			f, err := os.OpenFile(currentPath, os.O_CREATE|os.O_WRONLY, permissions)
 			if err != nil {
 				return fmt.Errorf("failed to create file %s: %w", currentPath, err)
 			}
-
 			f.Close()
 			logger.Info("Planted file: " + currentPath)
 		} else {
@@ -92,7 +99,7 @@ func createFileSystem(node *TreeNode, parentPath string, logger logger.Logger) e
 		}
 	}
 
-	// loop through children with the correct parent path
+	// Process children
 	for _, child := range node.children {
 		if err := createFileSystem(child, currentPath, logger); err != nil {
 			return err
