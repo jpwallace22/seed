@@ -245,6 +245,32 @@ seed --format json -f path/to/structure.json
 - 🌲 Supports standard tree format
 - 📁 Creates both files and directories
 
+## Benchmarks
+
+### Overview
+
+#### Time performance
+
+| nodes | ascii (ms) | json (ms) | difference |
+|-------|------------|-----------|------------|
+| 100   | 8.62      | 9.00      | +4.4%      |
+| 500   | 35.55     | 36.76     | +3.4%      |
+| 1000  | 64.48     | 66.23     | +2.7%      |
+| 5000  | 428.16    | 438.29    | +2.4%      |
+
+#### Memory Usage
+
+| Nodes | ASCII (KB) | JSON (KB) | Difference |
+|-------|------------|-----------|------------|
+| 100   | 13.89     | 13.95     | +0.4%      |
+| 500   | 17.09     | 17.14     | +0.3%      |
+| 1000  | 24.82     | 25.11     | +1.2%      |
+| 5000  | 235.83    | 235.89    | +0.03%     |
+
+### In Depth
+
+A more in depth analysis and breakdown of the benchmarks can be found [here](./benchmark/README.md)
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.

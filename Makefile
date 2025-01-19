@@ -42,6 +42,29 @@ build\:all:
 	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o $(BINARY_DIR)/$(BINARY_NAME)-windows-amd64.exe ./$(MAIN_PATH)
 	@$(call success,"Built all")
 
+.PHONY: benchmark
+benchmark: build
+	@echo "Running Benchmarks..."
+	go test ./benchmark -bench=. \
+		-benchmem \
+		-count=3 \
+		-benchtime=2s \
+		-cpu=1,4 \
+		-timeout=30m \
+		| tee ./benchmark/benchmark_results.txt
+	@$(call success,"Standard benchmarks complete.")
+
+benchmark\:full: build
+	@echo "Running Benchmarks..."
+	go test ./benchmark -bench=. \
+		-benchmem \
+		-count=5 \
+		-benchtime=5s \
+		-cpu=1,6,12 \
+		-timeout=45m \
+		| tee ./benchmark/benchmark_results_full.txt
+	@$(call success,"Full benchmarks complete.")
+
 # Run tests
 .PHONY: test
 test:
